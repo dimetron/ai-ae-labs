@@ -1,0 +1,3 @@
+
+# go build in a single-package dir writes the binary next to main.go
+demo/1_ai-gateway/mock-llm/mock-llm
