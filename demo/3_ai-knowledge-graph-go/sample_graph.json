@@ -1,0 +1,107 @@
+[
+  {
+    "subject": "industrial revolution",
+    "predicate": "began in",
+    "object": "great britain"
+  },
+  {
+    "subject": "industrial revolution",
+    "predicate": "characterized by",
+    "object": "machine manufacturing"
+  },
+  {
+    "subject": "industrial revolution",
+    "predicate": "led to",
+    "object": "urbanization"
+  },
+  {
+    "subject": "industrial revolution",
+    "predicate": "led to",
+    "object": "rise of capitalism"
+  },
+  {
+    "subject": "industrial revolution",
+    "predicate": "led to",
+    "object": "new labor movements"
+  },
+  {
+    "subject": "industrial revolution",
+    "predicate": "fueled by",
+    "object": "technological innovations"
+  },
+  {
+    "subject": "james watt",
+    "predicate": "developed",
+    "object": "steam engine"
+  },
+  {
+    "subject": "james watt",
+    "predicate": "born in",
+    "object": "scotland"
+  },
+  {
+    "subject": "scotland",
+    "predicate": "a country in",
+    "object": "europe"
+  },
+  {
+    "subject": "steam engine",
+    "predicate": "revolutionized",
+    "object": "transportation"
+  },
+  {
+    "subject": "steam engine",
+    "predicate": "revolutionized",
+    "object": "manufacturing processes"
+  },
+  {
+    "subject": "steam engine",
+    "predicate": "spread to",
+    "object": "europe"
+  },
+  {
+    "subject": "steam engine",
+    "predicate": "led to",
+    "object": "industrial revolution"
+  },
+  {
+    "subject": "steam engine",
+    "predicate": "spread to",
+    "object": "north america"
+  },
+  {
+    "subject": "technological innovations",
+    "predicate": "led to",
+    "object": "digital computers"
+  },
+  {
+    "subject": "digital computers",
+    "predicate": "enabled",
+    "object": "artificial intelligence"
+  },
+  {
+    "subject": "artificial intelligence",
+    "predicate": "will replace",
+    "object": "humanity"
+  },
+  {
+    "subject": "artificial intelligence",
+    "predicate": "led to",
+    "object": "llms"
+  },
+  {
+    "subject": "robert mcdermott",
+    "predicate": "likes",
+    "object": "llms"
+  },
+  {
+    "subject": "robert mcdermott",
+    "predicate": "owns",
+    "object": "digital computers"
+  },
+  {
+    "subject": "robert mcdermott",
+    "predicate": "lives in",
+    "object": "north america"
+  }
+]

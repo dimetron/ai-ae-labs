@@ -1,0 +1,42 @@
+{
+  "providers": {
+    "mock": {
+      "models": {
+        "mock-gpt": {
+          "rates": { "input": "0.15", "output": "0.60", "cacheRead": "0.075" }
+        }
+      }
+    },
+    "openai": {
+      "models": {
+        "gpt-4o-mini": {
+          "rates": { "input": "0.15", "output": "0.60", "cacheRead": "0.075" }
+        }
+      }
+    },
+    "anthropic": {
+      "models": {
+        "claude-sonnet-4-0": {
+          "rates": { "input": "3.00", "output": "15.00", "cacheRead": "0.30" }
+        }
+      }
+    },
+    "gcp.gemini": {
+      "models": {
+        "gemini-3.7-flash": {
+          "rates": { "input": "0.75", "output": "3.75" }
+        }
+      }
+    },
+    "ollama": {
+      "models": {
+        "llama3.2": {
+          "rates": { "input": "0", "output": "0" }
+        },
+        "deepseek-v4-flash:preview": {
+          "rates": { "input": "0", "output": "0" }
+        }
+      }
+    }
+  }
+}

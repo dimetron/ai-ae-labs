@@ -1,0 +1,3 @@
+
+# Showcase Email MCP
+

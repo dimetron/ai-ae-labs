@@ -1,0 +1,24 @@
+[llm]
+model = "gemma4:12b-mlx"
+#model = "claude-3.5-sonnet-v2"
+#model = "gpt4o"
+api_key = "sk-1234"
+base_url = "http://localhost:11434/v1/chat/completions"
+max_tokens = 8192
+temperature = 0.8
+
+[chunking]
+chunk_size = 100   # Number of words per chunk
+overlap = 20       # Number of words to overlap between chunks
+
+[standardization]
+enabled = true              # Whether to enable entity standardization
+use_llm_for_entities = true # Whether to use LLM for additional entity resolution
+
+[inference]
+enabled = true              # Whether to enable relationship inference
+use_llm_for_inference = true # Whether to use LLM for relationship inference
+apply_transitive = true     # Whether to apply transitive inference rules
+
+[visualization]
+edge_smooth = false  # Options: false, "dynamic", "continuous", "discrete", etc.

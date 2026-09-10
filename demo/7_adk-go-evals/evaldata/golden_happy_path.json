@@ -1,0 +1,25 @@
+[
+  {
+    "author": "refund_eval",
+    "tool_calls": [
+      {
+        "id": "adk-b6242248-7494-4c7c-962a-c7eae1927eed",
+        "name": "open_refund_case",
+        "args": {
+          "merchant_id": "A-114",
+          "transaction_id": "txn-2026-07-118845"
+        }
+      }
+    ],
+    "node_path": "refund_eval"
+  },
+  {
+    "author": "refund_eval",
+    "node_path": "refund_eval"
+  },
+  {
+    "author": "refund_eval",
+    "text": "Case rc-txn-2026-07-118845-A-114 opened with status pending.",
+    "node_path": "refund_eval"
+  }
+]

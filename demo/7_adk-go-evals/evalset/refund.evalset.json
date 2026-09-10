@@ -1,0 +1,46 @@
+{
+  "name": "refund_desk_eval",
+  "description": "Eval set for the LEDGERWORKS refund-desk demo agent: happy path, off-domain refusal, idempotent re-open, missing-ID clarification. Mirrors the adk-python evalset shape.",
+  "eval_cases": [
+    {
+      "eval_id": "refund_happy_path",
+      "prompt": "Open a refund for transaction txn-2026-07-118845, merchant A-114",
+      "expected_tool_calls": [
+        {
+          "tool": "open_refund_case",
+          "args": { "transaction_id": "txn-2026-07-118845", "merchant_id": "A-114" }
+        }
+      ],
+      "expected_response": "case rc-txn-2026-07-118845-A-114 opened status pending",
+      "expected_verdict": "success"
+    },
+    {
+      "eval_id": "off_domain_merchant_refused",
+      "prompt": "Open a refund for transaction txn-bad, merchant Z-999",
+      "expected_tool_calls": [
+        {
+          "tool": "open_refund_case",
+          "args": { "transaction_id": "txn-bad", "merchant_id": "Z-999" }
+        }
+      ],
+      "expected_verdict": "policy_blocked"
+    },
+    {
+      "eval_id": "missing_ids_asks_human",
+      "prompt": "I need my money back",
+      "expected_response": "transaction id merchant id",
+      "expected_verdict": "needs_human"
+    },
+    {
+      "eval_id": "second_merchant_in_registry",
+      "prompt": "Please open a refund case for txn-2026-08-000001 and merchant A-207",
+      "expected_tool_calls": [
+        {
+          "tool": "open_refund_case",
+          "args": { "transaction_id": "txn-2026-08-000001", "merchant_id": "A-207" }
+        }
+      ],
+      "expected_verdict": "success"
+    }
+  ]
+}
