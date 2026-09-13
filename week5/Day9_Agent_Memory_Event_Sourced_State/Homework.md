@@ -1,16 +1,16 @@
 # Домашнє завдання 9 — Кінець амнезії: сесії, event-sourced стан і пам'ять між розмовами
 
-> **Трек:** Builder · **Мова:** Go 1.27 · **Платформа:** Google ADK v2.2.0 (`google.golang.org/adk/v2`; звірено 27.08.2026 за `courses/AI_Agents_Engineering/lectures/go.mod`)
+> **Трек:** Builder · **Мова:** Go 1.27 · **Платформа:** Google ADK v2.4.0 (`google.golang.org/adk/v2`; звірено 13.09.2026 за `courses/AI_Agents_Engineering/lectures/go.mod`)
 > **Складність:** 80 балів (базове) + 20 балів (++ Advanced) = 100
 > **Дедлайн:** два тижні від відкриття завдання; рекомендуємо здати протягом тижня — наступна лекція спирається на цей артефакт.
 
 ## Перевірити перед здачею (станом на 08/2026)
 
-- [x] **ADK Go v2.2.0** — усі сигнатури звірено 27.08.2026 за module cache `google.golang.org/adk/v2@v2.2.0`: `session.InMemoryService()`, `memory.InMemoryService()`, `memoryService.AddSessionToMemory(ctx, prevSession)`, `preloadmemorytool.New()`, `loadmemorytool.New()`, `ctx.Session().State().Set("user:...", ...)`, `event.Actions.StateDelta`. Повний перелік із номерами рядків — у чек-лісті `Lecture.md`.
+- [x] **ADK Go v2.4.0** — усі сигнатури звірено 27.08.2026, перепеврено 13.09.2026 за module cache `google.golang.org/adk/v2@v2.4.0`: `session.InMemoryService()`, `memory.InMemoryService()`, `memoryService.AddSessionToMemory(ctx, prevSession)`, `preloadmemorytool.New()`, `loadmemorytool.New()`, `ctx.Session().State().Set("user:...", ...)`, `event.Actions.StateDelta`. Повний перелік із номерами рядків — у чек-лісті `Lecture.md`.
 - [x] **Еталонний приклад** — `sources/github/adk-go/examples/tools/loadmemory/main.go` існує, helper `createPreviousSessionWithHistory` на місці (рядки 73 і 142; звірено 27.08.2026). Копія того самого прикладу лежить і в `samples/adk/adk-go/examples/tools/loadmemory/main.go`.
 - [ ] **Стартовий шаблон** — `courses/AI_Agents_Engineering/lectures/week5/Day9_Agent_Memory_Event_Sourced_State/labs/main.go` уже містить каркас `memory_agent` із трьома інструментами; ваша задача — дописати сценарій двох сесій і тести.
 
-> **Одна пастка, яка коштує 20 хвилин.** `session.Event.Actions` — це **значення** типу `session.EventActions`, а не вказівник. Перевірка `if event.Actions != nil` **не компілюється**: `invalid operation: mismatched types session.EventActions and untyped nil` (перевірено компілятором 27.08.2026 на піні v2.2.0). Правильно — `if len(event.Actions.StateDelta) > 0`.
+> **Одна пастка, яка коштує 20 хвилин.** `session.Event.Actions` — це **значення** типу `session.EventActions`, а не вказівник. Перевірка `if event.Actions != nil` **не компілюється**: `invalid operation: mismatched types session.EventActions and untyped nil` (перевірено компілятором 27.08.2026 на піні v2.2.0, перепеврено 13.09.2026 на v2.4.0). Правильно — `if len(event.Actions.StateDelta) > 0`.
 
 ## Легенда
 
@@ -44,7 +44,7 @@
 |---|---|---|
 | `go build` падає з помилкою версії | Go старіший за 1.27 (пін у `courses/AI_Agents_Engineering/lectures/go.mod`) | `go version`; оновіть Go до версії з go.mod |
 | `event.Actions != nil` не компілюється | `Actions` — значення `session.EventActions`, не вказівник | замініть на `len(event.Actions.StateDelta) > 0` |
-| `session.NewEvent("inv")` не компілюється: «not enough arguments» | у v2.2.0 сигнатура — `NewEvent(ctx, invocationID)` | передайте `ctx` першим аргументом |
+| `session.NewEvent("inv")` не компілюється: «not enough arguments» | у v2.4.0 сигнатура — `NewEvent(ctx, invocationID)` | передайте `ctx` першим аргументом |
 | Агент стартує, але кожна відповідь — помилка API | Немає/невалідний `GOOGLE_API_KEY` | `echo $GOOGLE_API_KEY`; ключ має бути в оточенні процесу, не лише в `.env` |
 | Агент відповідає, але ніколи не викликає `remember_fact` | `Instruction` лишилась «ЗАМІНИ: …» зі стартера | Опишіть в інструкції, *коли* викликати інструмент (нова стала інформація про користувача) |
 | `preloadmemorytool` не показує факти з першої сесії | Не викликано `AddSessionToMemory`, або інший `userID`/`appName` у другій сесії | Звірте потік: створити сесію → append events → `AddSessionToMemory` → нова сесія → `runner.Run`; еталон — `loadmemory` |
@@ -129,7 +129,7 @@
 GitHub-репозиторій із кодом, тестами, `audit_*.json` і `README.md` (з двома прогонами + бюджетом контексту). `go build ./...` і `go test -race ./...` мають проходити. Посилання на репозиторій — у форму здачі. Якщо репозиторій закритий — додайте акаунт ментора в collaborators (акаунт указано в інструкції до курсу на платформі).
 
 **Стартовий шаблон:** [`courses/AI_Agents_Engineering/lectures/week5/Day9_Agent_Memory_Event_Sourced_State/labs/main.go`](labs/main.go)
-**Еталонний приклад:** [`sources/github/adk-go/examples/tools/loadmemory/main.go`](https://github.com/google/adk-go/blob/v2.2.0/examples/tools/loadmemory/main.go)
+**Еталонний приклад:** [`sources/github/adk-go/examples/tools/loadmemory/main.go`](https://github.com/google/adk-go/blob/v2.4.0/examples/tools/loadmemory/main.go)
 
 **Відео (не обов'язкові, не оцінюються; повний перелік — у `Lecture.md`, розділ «Відео до теми»):**
 

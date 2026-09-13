@@ -15,10 +15,10 @@
 //	GOOGLE_API_KEY   -> gemini
 //	OPENAI_API_KEY   -> openaimodel
 //
-// ADK Go v2.2.0 has no Anthropic backend; an ANTHROPIC_API_KEY alone will not
+// ADK Go v2.4.0 has no Anthropic backend; an ANTHROPIC_API_KEY alone will not
 // run this lab, and the error says so explicitly.
 //
-// Verified against google.golang.org/adk/v2 v2.2.0 (released 2026-07-23,
+// Verified against google.golang.org/adk/v2 v2.4.0 (released 2026-09-11,
 // requires Go 1.27) on 2026-08-26. Re-check before recording.
 package main
 

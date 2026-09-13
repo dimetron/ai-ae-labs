@@ -7,7 +7,7 @@
 
 ```
 code/
-├── go.mod                          # Module: google.golang.org/adk/v2 v2.2.0
+├── go.mod                          # Module: google.golang.org/adk/v2 v2.4.0
 ├── go.sum
 ├── internal/adkrun/
 │   ├── adkrun.go                   # Shared headless runner (Pipeline + Run)
@@ -83,7 +83,7 @@ go run ./week6/part2/cmd --task "optimize data processing function"
 
 ## Dependencies
 
-- `google.golang.org/adk/v2` v2.2.0 — Google ADK Go SDK
+- `google.golang.org/adk/v2` v2.4.0 — Google ADK Go SDK
 - `google.golang.org/genai` — GenAI content types (indirect)
 
 Станом на 07/2026. Перед записом лекцій звірити версії з поточним релізом.

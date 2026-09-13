@@ -2,7 +2,7 @@
 
 **Тиждень 4, частина 2 · Дедлайн: два тижні від відкриття завдання**
 
-> **Станом на 08/2026:** лаба збирається з `google.golang.org/adk/v2` **v2.2.0** (пін у `courses/AI_Agents_Engineering/lectures/go.mod`) і Go 1.27; твердження про дефолт `workflow.DefaultRetryConfig()` у п. 3 звірені з v2.0.0.
+> **Станом на 09/2026:** лаба збирається з `google.golang.org/adk/v2` **v2.4.0** (пін у `courses/AI_Agents_Engineering/lectures/go.mod`) і Go 1.27; твердження про дефолт `workflow.DefaultRetryConfig()` у п. 3 звірені з v2.0.0 і перепеврені 13.09.2026 на v2.4.0.
 
 ## Легенда
 
@@ -109,7 +109,7 @@ week4/Day8_Fault_Tolerant_Tool_Harness/
 **Чесні межі, щоб ви не витратили вечір даремно** (станом на 08/2026, звірено 27.08.2026 — перевірте самі, ці версії живуть тижнями):
 
 - Go-інтеграція ADK ↔ Temporal існує — `go.temporal.io/sdk/contrib/googleadk` — але це **v0.2.0**, тобто pre-1.0: API можуть змінитися без попередження.
-- І головна пастка: цей модуль пінить ADK **pseudo-version із головної гілки**, а наша лаба — тегованою **v2.2.0**. Скласти їх в одному `go.mod` — це ручне вирівнювання версій, а не `go get`. Закладайте на це час.
+- І головна пастка: цей модуль пінить ADK **pseudo-version із головної гілки**, а наша лаба — тегованою **v2.4.0**. Скласти їх в одному `go.mod` — це ручне вирівнювання версій, а не `go get`. Закладайте на це час.
 - **Дозволений спрощений шлях, і він зараховується так само:** вам **не обовʼязково** тягнути ADK у Workflow. Візьміть свій ReAct-цикл із ДЗ 7 у вигляді звичайних Go-функцій, оберніть цикл у Temporal Workflow, а кожен виклик «LLM» і кожен tool call — в Activity. Ідея та сама, а версійного пекла немає. Такий варіант — правильна відповідь, а не полегшена.
 - Якщо не хочете піднімати Temporal взагалі — є ще дешевший варіант, який теж доводить розуміння: напишіть **власний журнал подій** (append-only файл `NDJSON`), у який дописується результат кожного завершеного кроку, і зробіть так, щоб при старті агент спершу програвав журнал і пропускав уже виконані кроки. Це рівно та сама ідея, зменшена до 100 рядків. Умова успіху — та сама пара чисел.
 
@@ -165,7 +165,7 @@ week4/Day8_Fault_Tolerant_Tool_Harness/
 
 GitHub-репозиторій з кодом, тестами та README; `go build ./...` і `go test ./...` мають проходити; `go run . console` має запускатись і показувати event log самокорекції в stdout. Посилання на репозиторій — у форму здачі. Якщо репозиторій закритий — додайте акаунт ментора в collaborators (акаунт указано в інструкції до курсу на платформі).
 
-Стартовий шаблон: [courses/AI_Agents_Engineering/lectures/week4/Day8_Fault_Tolerant_Tool_Harness/labs/main.go](labs/main.go). Еталонні приклади: [`sources/github/adk-go/examples/multiagent/collaboration/`](https://github.com/google/adk-go/blob/v2.2.0/examples/multiagent/collaboration/main.go) (functiontool, типізований інструмент), [`sources/github/adk-go/examples/workflow/complex/`](https://github.com/google/adk-go/blob/v2.2.0/examples/workflow/complex/main.go) (resilient-обгортка моделі, зразок retry-стратегії).
+Стартовий шаблон: [courses/AI_Agents_Engineering/lectures/week4/Day8_Fault_Tolerant_Tool_Harness/labs/main.go](labs/main.go). Еталонні приклади: [`sources/github/adk-go/examples/multiagent/collaboration/`](https://github.com/google/adk-go/blob/v2.4.0/examples/multiagent/collaboration/main.go) (functiontool, типізований інструмент), [`sources/github/adk-go/examples/workflow/complex/`](https://github.com/google/adk-go/blob/v2.4.0/examples/workflow/complex/main.go) (resilient-обгортка моделі, зразок retry-стратегії).
 
 ## Дедлайн
 

@@ -120,7 +120,7 @@ go test -run TestEarlyWin -v .
 
 GitHub-репозиторій з кодом та README; `go build ./...` має проходити без помилок; посилання на репозиторій — у форму здачі. Якщо репозиторій закритий — додайте акаунт ментора в collaborators (акаунт указано в інструкції до курсу на платформі).
 
-Інструкція до лаби: [labs/…/Day2_…/README.md](labs/README.md) — офлайн-старт без ключа, два рівні відмови, troubleshooting, бонус-трек · Стартовий шаблон: [main.go](labs/main.go) · API-приклади для звірки: [function tools](https://github.com/google/adk-go/blob/v2.2.0/examples/tools/multipletools/main.go), [workflow nodes](https://github.com/google/adk-go/blob/v2.2.0/examples/workflow/basic/main.go)
+Інструкція до лаби: [labs/…/Day2_…/README.md](labs/README.md) — офлайн-старт без ключа, два рівні відмови, troubleshooting, бонус-трек · Стартовий шаблон: [main.go](labs/main.go) · API-приклади для звірки: [function tools](https://github.com/google/adk-go/blob/v2.4.0/examples/tools/multipletools/main.go), [workflow nodes](https://github.com/google/adk-go/blob/v2.4.0/examples/workflow/basic/main.go)
 
 ## Дедлайн
 

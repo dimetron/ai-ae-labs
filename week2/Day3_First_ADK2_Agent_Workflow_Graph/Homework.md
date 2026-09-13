@@ -1,6 +1,6 @@
 # Домашнє завдання 3 — Агент стає графом: вузли, ребра, тести
 
-> **Станом на 08/2026 (перед використанням потрібно перевірити):** пін `google.golang.org/adk/v2` = v2.2.0, Go 1.27 — брати з `go.mod` лабораторії, не `@latest`. Сигнатури `workflow.NewFunctionNode`, `workflow.NewToolNodeTyped`, `workflow.Chain`, `agent.NewStrictContextMock` **звірено дослівно з модулем v2.2.0 27.08.2026** — точні рядки й файли в [`references.md`](references.md).
+> **Станом на 09/2026 (перед використанням потрібно перевірити):** пін `google.golang.org/adk/v2` = v2.4.0, Go 1.27 — брати з `go.mod` лабораторії, не `@latest`. Сигнатури `workflow.NewFunctionNode`, `workflow.NewToolNodeTyped`, `workflow.Chain`, `agent.NewStrictContextMock` **звірено дослівно з модулем v2.4.0 13.09.2026** — точні рядки й файли в [`references.md`](references.md).
 
 > **Одна пастка компіляції, яку варто знати заздалегідь.** `workflow.NewFunctionNode` повертає **одне** значення, а `workflow.NewToolNodeTyped` — **два** (`*ToolNode, error`). Це друга за частотою причина «не збирається» в цьому ДЗ.
 
@@ -93,7 +93,7 @@ go run ./week2/Day3_First_ADK2_Agent_Workflow_Graph/labs/solution
 
 GitHub-репозиторій з кодом, тестами та README; `go build ./...` і `go test ./...` мають проходити; посилання на репозиторій — у форму здачі. Якщо репозиторій закритий — додайте акаунт ментора в collaborators (акаунт указано в інструкції до курсу на платформі).
 
-Стартовий шаблон: [courses/AI_Agents_Engineering/lectures/week2/Day3_First_ADK2_Agent_Workflow_Graph/labs/main.go](labs/main.go) · детермінований reference: [solution/](labs/solution/main.go) · еталонні API-приклади: [`sources/github/adk-go/examples/workflow/basic/`](https://github.com/google/adk-go/blob/v2.2.0/examples/workflow/basic/main.go), [`sources/github/adk-go/examples/workflow/routing/string/`](https://github.com/google/adk-go/blob/v2.2.0/examples/workflow/routing/string/main.go)
+Стартовий шаблон: [courses/AI_Agents_Engineering/lectures/week2/Day3_First_ADK2_Agent_Workflow_Graph/labs/main.go](labs/main.go) · детермінований reference: [solution/](labs/solution/main.go) · еталонні API-приклади: [`sources/github/adk-go/examples/workflow/basic/`](https://github.com/google/adk-go/blob/v2.4.0/examples/workflow/basic/main.go), [`sources/github/adk-go/examples/workflow/routing/string/`](https://github.com/google/adk-go/blob/v2.4.0/examples/workflow/routing/string/main.go)
 
 ## Дедлайн
 

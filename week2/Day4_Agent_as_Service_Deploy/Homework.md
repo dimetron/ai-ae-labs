@@ -1,6 +1,6 @@
 # Домашнє завдання 4 — Агент виходить у мережу: HTTP-сервіс і бінарник `FROM scratch`
 
-> **Станом на 08/2026 (перед використанням потрібно перевірити):** пін `google.golang.org/adk/v2` = v2.2.0, Go 1.27 — брати з затвердженого `go.mod` курсу, не `@latest`. Маршрут `POST /api/run_sse` і camelCase-поля `appName` / `userId` / `sessionId` / `newMessage` **звірено дослівно з модулем v2.2.0 27.08.2026** (`server/adkrest/internal/models/runtime.go:24–30`) — точні рядки в [`references.md`](references.md). Базовий образ Dockerfile — `golang:1.27`, той самий, що Go-директива `go.mod` лаби.
+> **Станом на 09/2026 (перед використанням потрібно перевірити):** пін `google.golang.org/adk/v2` = v2.4.0, Go 1.27 — брати з затвердженого `go.mod` курсу, не `@latest`. Маршрут `POST /api/run_sse` і camelCase-поля `appName` / `userId` / `sessionId` / `newMessage` **звірено дослівно з модулем v2.4.0 13.09.2026** (`server/adkrest/internal/models/runtime.go:24–30`) — точні рядки в [`references.md`](references.md). Базовий образ Dockerfile — `golang:1.27`, той самий, що Go-директива `go.mod` лаби.
 
 ## Легенда
 
@@ -79,14 +79,14 @@ GitHub-репозиторій з кодом, Dockerfile та README; `go build .
 
 ```bash
 go mod init github.com/<ваш-акаунт>/adk-agent-service
-go get google.golang.org/adk/v2@v2.2.0    # курсовий пін станом на 08/2026
+go get google.golang.org/adk/v2@v2.4.0    # курсовий пін станом на 09/2026
 go mod tidy
 go build ./...
 ```
 
-`v2.2.0` — це пін курсу **станом на 08/2026** (звірено 27.08.2026 проти `courses/AI_Agents_Engineering/lectures/go.mod`). Не пишіть `@latest`: між вашою збіркою і збіркою перевіряючого може вийти нова мінорна версія, і тоді «в мене працює» перестане бути аргументом. Якщо викладач оголосив новіший пін — беріть його, але так само явним числом.
+`v2.4.0` — це пін курсу **станом на 09/2026** (звірено 13.09.2026 проти `courses/AI_Agents_Engineering/lectures/go.mod`). Не пишіть `@latest`: між вашою збіркою і збіркою перевіряючого може вийти нова мінорна версія, і тоді «в мене працює» перестане бути аргументом. Якщо викладач оголосив новіший пін — беріть його, але так само явним числом.
 
-Стартовий шаблон: [courses/AI_Agents_Engineering/lectures/week2/Day4_Agent_as_Service_Deploy/labs/main.go](labs/main.go) · Еталонний приклад: [`sources/github/adk-go/examples/rest/`](https://github.com/google/adk-go/blob/v2.2.0/examples/rest/main.go) · Контракт маршрутів: [`server/adkrest`](https://github.com/google/adk-go/blob/v2.2.0/server/adkrest/internal/routers/runtime.go).
+Стартовий шаблон: [courses/AI_Agents_Engineering/lectures/week2/Day4_Agent_as_Service_Deploy/labs/main.go](labs/main.go) · Еталонний приклад: [`sources/github/adk-go/examples/rest/`](https://github.com/google/adk-go/blob/v2.4.0/examples/rest/main.go) · Контракт маршрутів: [`server/adkrest`](https://github.com/google/adk-go/blob/v2.4.0/server/adkrest/internal/routers/runtime.go).
 
 ## Дедлайн
 

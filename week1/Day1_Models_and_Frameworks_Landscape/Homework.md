@@ -148,7 +148,7 @@ echo "Яка погода у Львові?" | go run .
 
 GitHub-репозиторій з кодом та README; `go build ./...` має проходити без помилок; посилання на репозиторій — у форму здачі. Якщо репозиторій закритий — додайте акаунт ментора в collaborators (акаунт указано в інструкції до курсу на платформі).
 
-Інструкція до лаби: [labs/…/Day1_…/README.md](labs/README.md) — ранній win, карта фундаментів, troubleshooting, бонус-трек · Стартовий шаблон: [main.go](labs/main.go) · API-приклади для звірки: [ADK Go examples на GitHub](https://github.com/google/adk-go/tree/v2.2.0/examples)
+Інструкція до лаби: [labs/…/Day1_…/README.md](labs/README.md) — ранній win, карта фундаментів, troubleshooting, бонус-трек · Стартовий шаблон: [main.go](labs/main.go) · API-приклади для звірки: [ADK Go examples на GitHub](https://github.com/google/adk-go/tree/v2.4.0/examples)
 
 ## Дедлайн
 

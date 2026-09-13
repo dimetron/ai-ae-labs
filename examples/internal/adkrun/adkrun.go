@@ -2,7 +2,7 @@
 // uses to execute its ADK workflow agent: in-memory session, one user
 // message in, event stream out, final node output returned as text.
 //
-// Verified against google.golang.org/adk/v2 v2.0.0 (станом на 07/2026).
+// Verified against google.golang.org/adk/v2 v2.4.0 (станом на 09/2026).
 package adkrun
 
 import (

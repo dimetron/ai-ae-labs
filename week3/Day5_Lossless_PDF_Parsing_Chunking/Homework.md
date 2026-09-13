@@ -1,8 +1,8 @@
 # Домашнє завдання 5 — Агент вчиться читати: ingestion-конвеєр для бази знань
 
 > **Станом на 08/2026 (перед використанням потрібно перевірити):**
-> - ADK Go v2.2.0 (`google.golang.org/adk/v2`) — сигнатури `workflow.NewFunctionNode`, `workflow.Chain`, `agent.StrictContextMock` відповідають прикладам у `sources/github/adk-go/examples/workflow/`.
-> - **Go 1.27** — `go`-директива модуля лаб (`courses/AI_Agents_Engineering/lectures/go.mod`, звірено 27.08.2026). Не плутати з `go 1.26.5` у `go.mod` самого ADK v2.2.0: то мінімальна версія для залежності, а не те, що має стояти в студента.
+> - ADK Go v2.4.0 (`google.golang.org/adk/v2`) — сигнатури `workflow.NewFunctionNode`, `workflow.Chain`, `agent.StrictContextMock` відповідають прикладам у `sources/github/adk-go/examples/workflow/`.
+> - **Go 1.27** — `go`-директива модуля лаб (`courses/AI_Agents_Engineering/lectures/go.mod`, звірено 13.09.2026). Не плутати з `go 1.26.6` у `go.mod` самого ADK v2.4.0: то мінімальна версія для залежності, а не те, що має стояти в студента.
 > - Бібліотека парсингу PDF не зафіксована: `unidoc/unipdf` і `pdfcpu` — кандидати на вибір студента.
 
 ## Легенда
@@ -141,7 +141,7 @@ GitHub-репозиторій з кодом, тестовим документо
 ## Стартовий шаблон і референси
 
 Стартовий шаблон: [courses/AI_Agents_Engineering/lectures/week3/Day5_Lossless_PDF_Parsing_Chunking/labs/main.go](labs/main.go)
-Еталонні приклади: [`sources/github/adk-go/examples/workflow/basic/`](https://github.com/google/adk-go/blob/v2.2.0/examples/workflow/basic/main.go), [`sources/github/adk-go/examples/workflow/complex/`](https://github.com/google/adk-go/blob/v2.2.0/examples/workflow/complex/main.go)
+Еталонні приклади: [`sources/github/adk-go/examples/workflow/basic/`](https://github.com/google/adk-go/blob/v2.4.0/examples/workflow/basic/main.go), [`sources/github/adk-go/examples/workflow/complex/`](https://github.com/google/adk-go/blob/v2.4.0/examples/workflow/complex/main.go)
 
 Бібліотеки для парсингу PDF (на вибір): [`unidoc/unipdf`](https://github.com/unidoc/unipdf), [`pdfcpu`](https://github.com/pdfcpu/pdfcpu). Перевірте, яка з них коректно обробляє ваш тестовий документ — і зафіксуйте вибір у README.
 

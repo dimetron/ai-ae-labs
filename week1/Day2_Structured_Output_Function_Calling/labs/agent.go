@@ -32,7 +32,7 @@ type ProviderChoice struct {
 
 // BuildModel selects a model backend from the environment.
 //
-// ADK Go v2.2.0 ships exactly three provider packages — gemini, openaimodel and
+// ADK Go v2.4.0 ships exactly three provider packages — gemini, openaimodel and
 // apigee. There is NO Anthropic backend, so an Anthropic key alone is not
 // enough to run this lab; that is a real constraint of the framework, not an
 // oversight in the exercise.
@@ -114,7 +114,7 @@ func BuildModel(ctx context.Context) (model.LLM, ProviderChoice, error) {
 
 	if _, ok := adkenv.Key("ANTHROPIC_API_KEY"); ok {
 		return nil, ProviderChoice{}, fmt.Errorf(
-			"%w: ANTHROPIC_API_KEY is set, but ADK Go v2.2.0 ships no Anthropic backend "+
+			"%w: ANTHROPIC_API_KEY is set, but ADK Go v2.4.0 ships no Anthropic backend "+
 				"(providers: gemini, openaimodel, apigee). Set GOOGLE_API_KEY, OPENAI_API_KEY, "+
 				"or OLLAMA_BASE_URL instead", ErrNoProvider)
 	}

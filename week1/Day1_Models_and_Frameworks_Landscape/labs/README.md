@@ -1,6 +1,6 @@
 # Домашнє завдання 1 — інструкція до лабораторної: перший ADK-агент + Cross-Model Benchmark Harness
 
-**Тиждень 1 · День 1** · Мова: Go · `google.golang.org/adk/v2 v2.2.0`, Go 1.27
+**Тиждень 1 · День 1** · Мова: Go · `google.golang.org/adk/v2 v2.4.0`, Go 1.27
 (ADK вимагає ≥1.26.5) — **станом на 08/2026**.
 
 Лекція: [`courses/AI_Agents_Engineering/lectures/week1/Day1_Models_and_Frameworks_Landscape/Lecture.md`](../Lecture.md) ·

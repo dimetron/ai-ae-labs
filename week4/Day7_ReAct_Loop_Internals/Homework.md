@@ -2,7 +2,7 @@
 
 **Тиждень 4, частина 1 · Дедлайн: два тижні від відкриття завдання**
 
-> **Станом на 08/2026:** лаба збирається з `google.golang.org/adk/v2` **v2.2.0** (пін у `courses/AI_Agents_Engineering/lectures/go.mod`) і Go 1.27.
+> **Станом на 09/2026:** лаба збирається з `google.golang.org/adk/v2` **v2.4.0** (пін у `courses/AI_Agents_Engineering/lectures/go.mod`) і Go 1.27.
 
 ## Легенда
 
@@ -120,7 +120,7 @@ go run ./week4/Day7_ReAct_Loop_Internals/labs/solution
 
 ## Формат здачі
 
-GitHub-репозиторій з кодом обох версій, тестами та README; `go build ./...` має проходити; посилання на репозиторій — у форму здачі. Якщо репозиторій закритий — додайте акаунт ментора в collaborators (акаунт указано в інструкції до курсу на платформі). Шаблон стартової точки: `courses/AI_Agents_Engineering/lectures/week4/Day7_ReAct_Loop_Internals/labs/main.go`. Еталонний приклад для графової версії: [`sources/github/adk-go/examples/workflow/dynamic/basic/main.go`](https://github.com/google/adk-go/blob/v2.2.0/examples/workflow/dynamic/basic/main.go). Шаблон для підключення LLM: [`sources/github/adk-go/examples/workflow/dynamic/llm/main.go`](https://github.com/google/adk-go/blob/v2.2.0/examples/workflow/dynamic/llm/main.go).
+GitHub-репозиторій з кодом обох версій, тестами та README; `go build ./...` має проходити; посилання на репозиторій — у форму здачі. Якщо репозиторій закритий — додайте акаунт ментора в collaborators (акаунт указано в інструкції до курсу на платформі). Шаблон стартової точки: `courses/AI_Agents_Engineering/lectures/week4/Day7_ReAct_Loop_Internals/labs/main.go`. Еталонний приклад для графової версії: [`sources/github/adk-go/examples/workflow/dynamic/basic/main.go`](https://github.com/google/adk-go/blob/v2.4.0/examples/workflow/dynamic/basic/main.go). Шаблон для підключення LLM: [`sources/github/adk-go/examples/workflow/dynamic/llm/main.go`](https://github.com/google/adk-go/blob/v2.4.0/examples/workflow/dynamic/llm/main.go).
 
 ## Дедлайн
 

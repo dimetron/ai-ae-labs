@@ -191,7 +191,7 @@ func TestBuildModelPrecedence(t *testing.T) {
 }
 
 // TestBuildModelAnthropicIsRejectedClearly pins the framework limitation that
-// week 1 part 2's materials get wrong: ADK Go v2.2.0 has no Anthropic backend.
+// week 1 part 2's materials get wrong: ADK Go v2.4.0 has no Anthropic backend.
 // A learner holding only an Anthropic key must get an actionable message, not a
 // confusing auth failure at first request.
 func TestBuildModelAnthropicIsRejectedClearly(t *testing.T) {

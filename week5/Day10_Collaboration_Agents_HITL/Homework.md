@@ -1,10 +1,10 @@
 # Домашнє завдання 10 — Агент наймає команду: координатор, спеціалісти та людина в циклі
 
-> **Трек:** Builder · **Мова:** Go 1.27 · **Платформа:** Google ADK v2.2.0 (`google.golang.org/adk/v2`; звірено 26.08.2026 за `courses/AI_Agents_Engineering/lectures/go.mod`)
+> **Трек:** Builder · **Мова:** Go 1.27 · **Платформа:** Google ADK v2.4.0 (`google.golang.org/adk/v2`; звірено 13.09.2026 за `courses/AI_Agents_Engineering/lectures/go.mod`)
 > **Складність:** 80 балів (базове) + 20 балів (++ Advanced) = 100
 > **Дедлайн:** два тижні від відкриття завдання; рекомендуємо здати протягом тижня — наступна лекція спирається на цей артефакт.
 
-> **Станом на 08/2026 (перевірено):** пін курсу — **ADK Go v2.2.0**. Сигнатури `llmagent.ModeChat` / `ModeSingleTurn` / `ModeTask`, `workflow.NewJoinNode`, `eb.AddFanOut` / `AddFanIn`, `workflow.NewRequestInputEvent`, `workflow.ResumeOrRequestInput`, `workflow.ErrNodeInterrupted` — **звірено 27.08.2026** (module cache `google.golang.org/adk/v2@v2.2.0` + локальні приклади `samples/adk/adk-go/examples/`; повний перелік із номерами рядків — у чек-лісті `Lecture.md`). **A2A version caveat:** специфікація — **v1.0.1 (реліз 28.05.2026** — попереднє «26.05.2026» тут було помилковим, звірено з GitHub releases `a2aproject/A2A` 26.08.2026), Go-бібліотека `adk-go` — v0.3.15; на екрані підписуємо окремо.
+> **Станом на 09/2026 (перевірено):** пін курсу — **ADK Go v2.4.0**. Сигнатури `llmagent.ModeChat` / `ModeSingleTurn` / `ModeTask`, `workflow.NewJoinNode`, `eb.AddFanOut` / `AddFanIn`, `workflow.NewRequestInputEvent`, `workflow.ResumeOrRequestInput`, `workflow.ErrNodeInterrupted` — **звірено 27.08.2026, перепеврено 13.09.2026 на v2.4.0** (module cache `google.golang.org/adk/v2@v2.4.0` + локальні приклади `samples/adk/adk-go/examples/`; повний перелік із номерами рядків — у чек-лісті `Lecture.md`). **A2A version caveat:** специфікація — **v1.0.1 (реліз 28.05.2026** — попереднє «26.05.2026» тут було помилковим, звірено з GitHub releases `a2aproject/A2A` 26.08.2026), Go-бібліотека `adk-go` — v0.3.15; на екрані підписуємо окремо.
 
 ## Легенда
 
@@ -45,7 +45,7 @@
 | Симптом | Найімовірніша причина | Що зробити |
 |---|---|---|
 | `go build` падає з помилкою версії | Go старіший за 1.27 (пін у `courses/AI_Agents_Engineering/lectures/go.mod`) | `go version`; оновіть Go до версії з go.mod |
-| `NewDynamicNode(...)` не компілюється: «assignment mismatch: 2 variables but 1 value» | у v2.2.0 `workflow.NewDynamicNode` повертає **один** `Node`, а не пару `(Node, error)` | приберіть другу змінну; звірено за `workflow/dynamic_node.go:48` |
+| `NewDynamicNode(...)` не компілюється: «assignment mismatch: 2 variables but 1 value» | у v2.4.0 `workflow.NewDynamicNode` повертає **один** `Node`, а не пару `(Node, error)` | приберіть другу змінну; звірено за `workflow/dynamic_node.go:48` |
 | Затвор схвалення «зависає» назавжди | немає вікна рішення: `select` без `time.After` / без таймера | Завдання 7 лекції: `WaitForDecision` із default-deny по таймауту |
 | Кожна відповідь агента — помилка API | Немає/невалідний `GOOGLE_API_KEY` | `echo $GOOGLE_API_KEY`; ключ має бути в оточенні процесу |
 | Координатор сам «відповідає» замість делегувати | В інструкції немає правил делегування, або спеціалістів немає в `SubAgents` | Скопіюйте структуру правил із Завдання 3 лекції; перевірте, що всі спеціалісти перелічені в `SubAgents` |
@@ -109,15 +109,15 @@ GitHub-репозиторій / PR (основа фінального портф
 
 Стартовий шаблон: [`courses/AI_Agents_Engineering/lectures/week5/Day10_Collaboration_Agents_HITL/labs/main.go`](labs/main.go) · Еталонні приклади:
 
-- [`examples/multiagent/collaboration/main.go`](https://github.com/google/adk-go/blob/v2.2.0/examples/multiagent/collaboration/main.go) — три режими LLM-агентів разом (chat / single_turn / task) із `InputSchema` / `OutputSchema`.
-- [`examples/workflow/complex/main.go`](https://github.com/google/adk-go/blob/v2.2.0/examples/workflow/complex/main.go) — Plan-Execute через `workflow.NewJoinNode` + `AddFanOut` / `AddFanIn`.
-- [`examples/workflow/hitl_simple/main.go`](https://github.com/google/adk-go/blob/v2.2.0/examples/workflow/hitl_simple/main.go) — handoff HITL-пауза.
-- [`examples/workflow/hitl_rerun/main.go`](https://github.com/google/adk-go/blob/v2.2.0/examples/workflow/hitl_rerun/main.go) — re-entry через `workflow.ResumeOrRequestInput`.
+- [`examples/multiagent/collaboration/main.go`](https://github.com/google/adk-go/blob/v2.4.0/examples/multiagent/collaboration/main.go) — три режими LLM-агентів разом (chat / single_turn / task) із `InputSchema` / `OutputSchema`.
+- [`examples/workflow/complex/main.go`](https://github.com/google/adk-go/blob/v2.4.0/examples/workflow/complex/main.go) — Plan-Execute через `workflow.NewJoinNode` + `AddFanOut` / `AddFanIn`.
+- [`examples/workflow/hitl_simple/main.go`](https://github.com/google/adk-go/blob/v2.4.0/examples/workflow/hitl_simple/main.go) — handoff HITL-пауза.
+- [`examples/workflow/hitl_rerun/main.go`](https://github.com/google/adk-go/blob/v2.4.0/examples/workflow/hitl_rerun/main.go) — re-entry через `workflow.ResumeOrRequestInput`.
 - [Failure containment та error-as-Observation](https://www.motomtech.com/blog-post/ai-agent-retries-idempotency-tool-failures) — wrapper класифікує збій; модель не маскує його прозою.
 
 **Відео (не обов'язкові, не оцінюються; повний перелік із поясненнями — у `Lecture.md`, розділ «Відео до теми»):**
 
-- [New Google ADK 2 Introduces Agent Teams](https://www.youtube.com/watch?v=Tq6X7IxjgP8) — три режими підагента в одному огляді. Записане по **Alpha 1**; наш пін — v2.2.0, тож код у відео може не збиратися.
+- [New Google ADK 2 Introduces Agent Teams](https://www.youtube.com/watch?v=Tq6X7IxjgP8) — три режими підагента в одному огляді. Записане по **Alpha 1**; наш пін — v2.4.0, тож код у відео може не збиратися.
 - [From Chaos to Choreography: Multi-Agent Orchestration Patterns That Actually Work](https://www.youtube.com/watch?v=2czYyrTzILg) — оркестрація vs хореографія, до п.1 основного завдання.
 - [Building on a Known Foundation: A Catalog of Reusable Temporal Patterns](https://www.youtube.com/watch?v=QLfzLXASSso) — патерн Resumable Activity; пряма опора для абзацу «де б я пішов у Temporal» у README.
 

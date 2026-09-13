@@ -1,8 +1,8 @@
 # Домашнє завдання 6 — Agentic GraphRAG: hybrid retrieval, multi-hop planning, re-ranking, semantic cache та eval harness
 
 > **Станом на 08/2026 (перед використанням потрібно перевірити):**
-> - ADK Go v2.2.0 (`google.golang.org/adk/v2`) — сигнатури `workflow.NewEmittingFunctionNode`, `workflow.NewJoinNode`, `workflow.NewEdgeBuilder` (`AddFanOut`/`AddFanIn`) відповідають прикладам у `sources/github/adk-go/examples/workflow/`.
-> - **Go 1.27** — `go`-директива модуля лаб (`courses/AI_Agents_Engineering/lectures/go.mod`, звірено 27.08.2026). Не плутати з `go 1.26.5` у `go.mod` самого ADK v2.2.0: то мінімум для залежності, а не версія, яку має мати студент.
+> - ADK Go v2.4.0 (`google.golang.org/adk/v2`) — сигнатури `workflow.NewEmittingFunctionNode`, `workflow.NewJoinNode`, `workflow.NewEdgeBuilder` (`AddFanOut`/`AddFanIn`) відповідають прикладам у `sources/github/adk-go/examples/workflow/`.
+> - **Go 1.27** — `go`-директива модуля лаб (`courses/AI_Agents_Engineering/lectures/go.mod`, звірено 13.09.2026). Не плутати з `go 1.26.6` у `go.mod` самого ADK v2.4.0: то мінімум для залежності, а не версія, яку має мати студент.
 > - Reranker `BAAI/bge-reranker-v2-m3` — приклад-кандидат, не вимога.
 > - Поріг semantic cache `0.92` — стартова гіпотеза, не константа; калібрується на власному корпусі.
 
@@ -95,7 +95,7 @@
 
 GitHub-репозиторій з кодом, eval-таблицями та README; `go build ./...` має проходити; `go test ./...` — зелений (тести є у стартері з коробки, тож «якщо є» більше не застосовується: два `t.Skip` мають бути зняті й зелені, бо це критерії на 25 балів разом). README має містити: (а) decision sheet з обґрунтуванням щабля, (б) таблицю 5 запитів «до/після» rerank, (в) демонстрацію cache hit, (г) eval-таблицю 20 запитів із чотирма метриками. Посилання на репозиторій — у форму здачі. Якщо репозиторій закритий — додайте акаунт ментора в collaborators (акаунт указано в інструкції до курсу на платформі).
 
-Стартовий шаблон: [courses/AI_Agents_Engineering/lectures/week3/Day6_Reranking_Semantic_Cache_Maturity_Ladder/labs/main.go](labs/main.go) · Еталонні приклади: [`sources/github/adk-go/examples/workflow/basic/`](https://github.com/google/adk-go/blob/v2.2.0/examples/workflow/basic/main.go), [`sources/github/adk-go/examples/workflow/routing/string/`](https://github.com/google/adk-go/blob/v2.2.0/examples/workflow/routing/string/main.go) (для класифікатора), [`sources/github/adk-go/examples/workflow/complex/`](https://github.com/google/adk-go/blob/v2.2.0/examples/workflow/complex/main.go) (для fan-out + JoinNode у ++ Advanced) · Wiki-опори: [hybrid retrieval](https://localaimaster.com/blog/reranking-cross-encoders-guide), [CacheRAG / semantic caching](https://futureagi.com/blog/what-is-semantic-caching-llms-2026). FalkorDB GraphRAG-SDK — case study для слайда, **не залежність** для коду.
+Стартовий шаблон: [courses/AI_Agents_Engineering/lectures/week3/Day6_Reranking_Semantic_Cache_Maturity_Ladder/labs/main.go](labs/main.go) · Еталонні приклади: [`sources/github/adk-go/examples/workflow/basic/`](https://github.com/google/adk-go/blob/v2.4.0/examples/workflow/basic/main.go), [`sources/github/adk-go/examples/workflow/routing/string/`](https://github.com/google/adk-go/blob/v2.4.0/examples/workflow/routing/string/main.go) (для класифікатора), [`sources/github/adk-go/examples/workflow/complex/`](https://github.com/google/adk-go/blob/v2.4.0/examples/workflow/complex/main.go) (для fan-out + JoinNode у ++ Advanced) · Wiki-опори: [hybrid retrieval](https://localaimaster.com/blog/reranking-cross-encoders-guide), [CacheRAG / semantic caching](https://futureagi.com/blog/what-is-semantic-caching-llms-2026). FalkorDB GraphRAG-SDK — case study для слайда, **не залежність** для коду.
 
 ## Відео, якщо застрягли (не обов'язкове, посилання звірені 27.08.2026)
 
