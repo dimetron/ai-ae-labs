@@ -1,4 +1,4 @@
-# Домашнє завдання 5 — Агент вчиться читати: ingestion-конвеєр для бази знань
+# Практичне завдання 5 — Агент вчиться читати: ingestion-конвеєр для бази знань
 
 > **Станом на 08/2026 (перед використанням потрібно перевірити):**
 > - ADK Go v2.4.0 (`google.golang.org/adk/v2`) — сигнатури `workflow.NewFunctionNode`, `workflow.Chain`, `agent.StrictContextMock` відповідають прикладам у `sources/github/adk-go/examples/workflow/`.

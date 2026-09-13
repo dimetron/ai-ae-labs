@@ -1,4 +1,4 @@
-# Домашнє завдання 3 — Агент стає графом: вузли, ребра, тести
+# Практичне завдання 3 — Агент стає графом: вузли, ребра, тести
 
 > **Станом на 09/2026 (перед використанням потрібно перевірити):** пін `google.golang.org/adk/v2` = v2.4.0, Go 1.27 — брати з `go.mod` лабораторії, не `@latest`. Сигнатури `workflow.NewFunctionNode`, `workflow.NewToolNodeTyped`, `workflow.Chain`, `agent.NewStrictContextMock` **звірено дослівно з модулем v2.4.0 13.09.2026** — точні рядки й файли в [`references.md`](references.md).
 

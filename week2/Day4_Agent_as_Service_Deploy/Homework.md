@@ -1,4 +1,4 @@
-# Домашнє завдання 4 — Агент виходить у мережу: HTTP-сервіс і бінарник `FROM scratch`
+# Практичне завдання 4 — Агент виходить у мережу: HTTP-сервіс і бінарник `FROM scratch`
 
 > **Станом на 09/2026 (перед використанням потрібно перевірити):** пін `google.golang.org/adk/v2` = v2.4.0, Go 1.27 — брати з затвердженого `go.mod` курсу, не `@latest`. Маршрут `POST /api/run_sse` і camelCase-поля `appName` / `userId` / `sessionId` / `newMessage` **звірено дослівно з модулем v2.4.0 13.09.2026** (`server/adkrest/internal/models/runtime.go:24–30`) — точні рядки в [`references.md`](references.md). Базовий образ Dockerfile — `golang:1.27`, той самий, що Go-директива `go.mod` лаби.
 

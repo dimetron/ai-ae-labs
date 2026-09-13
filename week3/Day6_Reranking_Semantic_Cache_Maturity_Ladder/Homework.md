@@ -1,4 +1,4 @@
-# Домашнє завдання 6 — Agentic GraphRAG: hybrid retrieval, multi-hop planning, re-ranking, semantic cache та eval harness
+# Практичне завдання 6 — Agentic GraphRAG: hybrid retrieval, multi-hop planning, re-ranking, semantic cache та eval harness
 
 > **Станом на 08/2026 (перед використанням потрібно перевірити):**
 > - ADK Go v2.4.0 (`google.golang.org/adk/v2`) — сигнатури `workflow.NewEmittingFunctionNode`, `workflow.NewJoinNode`, `workflow.NewEdgeBuilder` (`AddFanOut`/`AddFanIn`) відповідають прикладам у `sources/github/adk-go/examples/workflow/`.
