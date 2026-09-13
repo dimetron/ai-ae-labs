@@ -1,18 +1,16 @@
 # Практичне завдання 2 — інструкція до лабораторної: Strict Schema Enforcer
 
-**Тиждень 1 · День 2** · Мова: Go · `google.golang.org/adk/v2 v2.4.0`, Go 1.27
-(ADK вимагає ≥1.26.5) — **станом на 08/2026**.
+**Тиждень 1 · День 2** · Мова: Go · `google.golang.org/adk/v2 v2.4.0`, Go 1.27 (ADK вимагає ≥1.26.6) — **станом на 09/2026**.
 
-Лекція: [`courses/AI_Agents_Engineering/lectures/week1/Day2_Structured_Output_Function_Calling/Lecture.md`](../Lecture.md) ·
-ДЗ: [`Homework.md`](../Homework.md)
+Матеріали вебінару і повний текст завдання — на платформі курсу (сторінка Вебінару 2).
 
 ---
 
 ## Ранній win — 3 хвилини, **без API-ключа й без мережі**
 
 ```bash
-cd courses/AI_Agents_Engineering/lectures
-go run ./week1/Day2_Structured_Output_Function_Calling/labs -offline console
+cd week1/Day2_Structured_Output_Function_Calling/labs
+go run . -offline console
 ```
 
 **Очікуваний вивід:** у stderr — рядок `rates: offline fixture (USD/EUR/PLN)`,
@@ -81,8 +79,8 @@ JSON від моделі виявився бездоганно валідним:
 
 | Тека | Що це | Для кого |
 |---|---|---|
-| `labs/` (у цій теці) ← **ви тут** | ваш робочий модуль: стартери й розв'язки ДЗ, корениться у `courses/AI_Agents_Engineering/lectures/` | студент |
-| `courses/AI_Agents_Engineering/code/week1/part2/` | instructor demo: той самий контракт `open_refund_case` уже як `workflow.NewFunctionNode[RefundCaseRequest, RefundCaseResponse]` | лектор на екрані |
+| `labs/` (у цій теці) ← **ви тут** | ваш робочий модуль: стартери ДЗ | студент |
+| instructor demo (показують у Блоці 4) | той самий контракт `open_refund_case` уже як `workflow.NewFunctionNode[RefundCaseRequest, RefundCaseResponse]` — код дає лектор на екрані | лектор |
 
 Демо показують у Блоці 4 як «++ Advanced». Дивитись його корисно, **запускати
 для здачі — не потрібно**: це інший модуль зі своїм `go.mod`.
@@ -112,8 +110,8 @@ JSON від моделі виявився бездоганно валідним:
 ## Тести
 
 ```bash
-cd courses/AI_Agents_Engineering/lectures
-go test ./week1/...
+cd week1/Day2_Structured_Output_Function_Calling/labs
+go test ./...
 ```
 
 **Очікуваний вивід:** усі пакети `ok`. Ключа й мережі не потрібно —

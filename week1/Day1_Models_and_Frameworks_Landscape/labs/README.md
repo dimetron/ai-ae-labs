@@ -1,10 +1,8 @@
 # Практичне завдання 1 — інструкція до лабораторної: перший ADK-агент + Cross-Model Benchmark Harness
 
-**Тиждень 1 · День 1** · Мова: Go · `google.golang.org/adk/v2 v2.4.0`, Go 1.27
-(ADK вимагає ≥1.26.5) — **станом на 08/2026**.
+**Тиждень 1 · День 1** · Мова: Go · `google.golang.org/adk/v2 v2.4.0`, Go 1.27 (ADK вимагає ≥1.26.6) — **станом на 09/2026**.
 
-Лекція: [`courses/AI_Agents_Engineering/lectures/week1/Day1_Models_and_Frameworks_Landscape/Lecture.md`](../Lecture.md) ·
-ДЗ: [`Homework.md`](../Homework.md)
+Матеріали вебінару і повний текст завдання — на платформі курсу (сторінка Вебінару 1).
 
 ---
 
@@ -14,9 +12,9 @@
 зрозумієте, чому він агент. Теорія — після.
 
 ```bash
-cd courses/AI_Agents_Engineering/lectures
+cd week1/Day1_Models_and_Frameworks_Landscape/labs
 export GOOGLE_API_KEY=...            # ключ Google AI Studio
-go run ./week1/Day1_Models_and_Frameworks_Landscape/labs console
+go run . console
 ```
 
 **Очікуваний вивід:** консольний launcher ADK друкує запрошення й чекає на
@@ -27,7 +25,7 @@ go run ./week1/Day1_Models_and_Frameworks_Landscape/labs console
 Без інтерактиву — той самий агент через пайп (саме так зручно ганяти бенчмарк):
 
 ```bash
-echo "Яка погода у Львові?" | MODEL=gemini-flash-latest go run ./week1/Day1_Models_and_Frameworks_Landscape/labs
+echo "Яка погода у Львові?" | MODEL=gemini-flash-latest go run .
 ```
 
 **Очікуваний вивід:** одна відповідь у stdout і завершення процесу. Без
@@ -42,7 +40,7 @@ echo "Яка погода у Львові?" | MODEL=gemini-flash-latest go run .
 ## Що здаєте і скільки це дає
 
 Дві таблиці, щоб не шукати відповіді по інших документах. Повний текст завдання —
-у [`Homework.md`](../Homework.md).
+на платформі курсу (сторінка Вебінару 1).
 
 | Що оцінюється | Бали |
 |---|---|
@@ -88,10 +86,7 @@ echo "Яка погода у Львові?" | MODEL=gemini-flash-latest go run .
 
 ### Дві теки з кодом — не переплутайте
 
-`labs/` (у цій теці) — **ваш** модуль (стартери й розв'язки ДЗ), корениться у
-`courses/AI_Agents_Engineering/lectures/`.
-`courses/AI_Agents_Engineering/code/week1/part1/` — окремий instructor-demo
-модуль для екрана лектора. Для здачі потрібен лише перший.
+`labs/` (у цій теці) — **ваш** модуль (стартери ДЗ) — це все, що потрібно для здачі.
 
 ## Core path — що має бути в здачі
 
@@ -130,7 +125,7 @@ echo "Яка погода у Львові?" | MODEL=gemini-flash-latest go run .
 ## Прогін кількох моделей
 
 ```bash
-echo "Яка погода у Львові?" | MODEL=gemini-flash-latest go run ./week1/Day1_Models_and_Frameworks_Landscape/labs
+echo "Яка погода у Львові?" | MODEL=gemini-flash-latest go run .
 echo "Яка погода у Львові?" | MODEL=gemini-3.7-flash    go run ./week1/Day1_Models_and_Frameworks_Landscape/labs
 ```
 
@@ -146,8 +141,8 @@ echo "Яка погода у Львові?" | MODEL=gemini-3.7-flash    go run .
 ## Тести
 
 ```bash
-cd courses/AI_Agents_Engineering/lectures
-go test ./week1/...
+cd week1/Day1_Models_and_Frameworks_Landscape/labs
+go test ./...
 ```
 
 **Очікуваний вивід:** усі пакети `ok`. Тести не потребують ні API-ключа, ні

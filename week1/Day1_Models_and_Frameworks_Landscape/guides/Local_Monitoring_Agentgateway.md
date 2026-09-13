@@ -41,6 +41,14 @@ cd demo/1_ai-gateway
 docker compose up -d
 ```
 
+> **Немає Docker?** Достатньо самого бінарника гейтвея: завантажте `agctl` під вашу
+> платформу зі [сторінки релізів agentgateway](https://github.com/agentgateway/agentgateway/releases)
+> (станом на 09/2026 — v1.5.0; `agctl-darwin-arm64`, `agctl-linux-amd64` тощо),
+> зробіть файл виконуваним і запустіть із конфігом `config/agentgateway.yaml`
+> із цієї теки. У цьому режимі у вас буде сам гейтвей (порт `:4000`) без Jaeger,
+> Prometheus і Grafana — траси дивитимете в access-log гейтвея. Для повного стеку
+> з дашбордами потрібен Docker compose вище.
+
 Піднімається шість сервісів:
 
 | Сервіс | Порт | Навіщо |
