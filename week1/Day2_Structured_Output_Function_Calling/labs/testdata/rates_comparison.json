@@ -1,0 +1,176 @@
+[
+  {
+    "cc": "AED",
+    "nbu_official": 12.1533,
+    "monobank_mid": 12.2061,
+    "delta_mid_vs_nbu": 0.052799999999999514
+  },
+  {
+    "cc": "AFN",
+    "monobank_mid": 0.6916
+  },
+  {
+    "cc": "ALL",
+    "monobank_mid": 0.5678
+  },
+  {
+    "cc": "AMD",
+    "monobank_mid": 0.1238
+  },
+  {
+    "cc": "ARS",
+    "monobank_mid": 0.031
+  },
+  {
+    "cc": "AUD",
+    "nbu_official": 31.82,
+    "monobank_mid": 32.2146,
+    "delta_mid_vs_nbu": 0.39459999999999695
+  },
+  {
+    "cc": "AZN",
+    "nbu_official": 26.2621,
+    "monobank_mid": 26.3711,
+    "delta_mid_vs_nbu": 0.10899999999999821
+  },
+  {
+    "cc": "BGN",
+    "monobank_mid": 26.4719
+  },
+  {
+    "cc": "BRL",
+    "monobank_mid": 8.7501
+  },
+  {
+    "cc": "BYN",
+    "monobank_mid": 14.8066
+  },
+  {
+    "cc": "CAD",
+    "nbu_official": 32.0632,
+    "monobank_mid": 32.3704,
+    "delta_mid_vs_nbu": 0.3071999999999946
+  },
+  {
+    "cc": "CHF",
+    "nbu_official": 54.5542,
+    "monobank_mid": 54.9461,
+    "delta_mid_vs_nbu": 0.3918999999999997
+  },
+  {
+    "cc": "CNY",
+    "nbu_official": 6.6501,
+    "monobank_mid": 6.6845,
+    "delta_mid_vs_nbu": 0.034399999999999764
+  },
+  {
+    "cc": "CZK",
+    "nbu_official": 2.1214,
+    "monobank_mid": 2.151,
+    "delta_mid_vs_nbu": 0.02959999999999985
+  },
+  {
+    "cc": "DKK",
+    "nbu_official": 6.8911,
+    "monobank_mid": 6.964,
+    "delta_mid_vs_nbu": 0.07290000000000063
+  },
+  {
+    "cc": "HUF",
+    "nbu_official": 0.14093,
+    "monobank_mid": 0.1432,
+    "delta_mid_vs_nbu": 0.0022699999999999942
+  },
+  {
+    "cc": "ISK",
+    "monobank_mid": 0.3706
+  },
+  {
+    "cc": "JPY",
+    "nbu_official": 0.28826,
+    "monobank_mid": 0.2925,
+    "delta_mid_vs_nbu": 0.004239999999999966
+  },
+  {
+    "cc": "KRW",
+    "nbu_official": 0.032841,
+    "monobank_mid": 0.0333,
+    "delta_mid_vs_nbu": 0.0004590000000000011
+  },
+  {
+    "cc": "MDL",
+    "nbu_official": 2.5692,
+    "monobank_mid": 2.5973,
+    "delta_mid_vs_nbu": 0.028100000000000236
+  },
+  {
+    "cc": "NOK",
+    "nbu_official": 4.7773,
+    "monobank_mid": 4.8842,
+    "delta_mid_vs_nbu": 0.10689999999999955
+  },
+  {
+    "cc": "NZD",
+    "nbu_official": 25.7183,
+    "monobank_mid": 26.1692,
+    "delta_mid_vs_nbu": 0.45090000000000074
+  },
+  {
+    "cc": "RSD",
+    "nbu_official": 0.43886,
+    "monobank_mid": 0.4417,
+    "delta_mid_vs_nbu": 0.002840000000000009
+  },
+  {
+    "cc": "SAR",
+    "nbu_official": 11.8823,
+    "monobank_mid": 11.9376,
+    "delta_mid_vs_nbu": 0.05529999999999902
+  },
+  {
+    "cc": "SGD",
+    "nbu_official": 35.0897,
+    "monobank_mid": 35.4048,
+    "delta_mid_vs_nbu": 0.31510000000000105
+  },
+  {
+    "cc": "USD",
+    "nbu_official": 44.639,
+    "monobank_buy": 44.43,
+    "monobank_sell": 44.831,
+    "monobank_mid": 44.6305,
+    "spread_pct": 0.8984887016726305,
+    "delta_mid_vs_nbu": -0.008500000000005059
+  },
+  {
+    "cc": "UZS",
+    "monobank_mid": 0.0038
+  },
+  {
+    "cc": "VND",
+    "nbu_official": 0.0017178,
+    "monobank_mid": 0.0017,
+    "delta_mid_vs_nbu": -0.000017800000000000107
+  },
+  {
+    "cc": "EUR",
+    "nbu_official": 51.513,
+    "monobank_buy": 51.3,
+    "monobank_sell": 51.9913,
+    "monobank_mid": 51.64565,
+    "spread_pct": 1.3385444853535686,
+    "delta_mid_vs_nbu": 0.13265000000000526
+  },
+  {
+    "cc": "PLN",
+    "nbu_official": 11.8735,
+    "monobank_mid": 12.045,
+    "delta_mid_vs_nbu": 0.17149999999999999
+  },
+  {
+    "cc": "GBP",
+    "nbu_official": 60.1894,
+    "monobank_mid": 60.7688,
+    "delta_mid_vs_nbu": 0.5793999999999997
+  }
+]
