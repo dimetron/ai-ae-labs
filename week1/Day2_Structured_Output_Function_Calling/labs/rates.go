@@ -62,6 +62,10 @@ type RateOutput struct {
 // Ukraine publishes. Keeping this an interface is what lets the tests run
 // offline and the binary run against the real bank.
 type Provider interface {
+	// Name is the provenance label the tool stamps into RateOutput.Source.
+	// An agent answer that cannot say where a number came from is not
+	// auditable, so every provider must identify itself.
+	Name() string
 	// RatesToUAH returns how many UAH one unit of each listed currency buys,
 	// plus the date the rates are valid for.
 	RatesToUAH(ctx context.Context) (map[string]float64, string, error)
@@ -114,7 +118,7 @@ func Convert(ctx context.Context, p Provider, in RateInput) (RateOutput, error) 
 		Target: target,
 		Rate:   baseUAH / targetUAH,
 		AsOf:   asOf,
-		Source: "nbu",
+		Source: p.Name(),
 	}, nil
 }
 
@@ -141,23 +145,43 @@ func rateToUAH(code string, rates map[string]float64) (float64, error) {
 // Chosen deliberately for this course: it needs no API key, so the production
 // path runs for every learner on day one (§2b "no surprise prerequisites"),
 // and it is a real endpoint with real failure modes rather than a toy.
+//
+// HTTPClient defaults to a client wrapped in CachedTransport: rate lists
+// change at most a few times a day, and a console session that asks three
+// questions must not send three upstream requests. Set HTTPClient yourself
+// (as tests do) to bypass or reconfigure the cache.
 type NBUProvider struct {
 	// BaseURL defaults to the NBU statistics service. Tests point it at an
 	// httptest server.
 	BaseURL string
-	// HTTPClient defaults to a client with a timeout. Never use
-	// http.DefaultClient for outbound calls in production: it has no timeout,
-	// so one hung upstream leaks a goroutine per request forever.
+	// HTTPClient defaults to a client with a timeout AND a 1-minute cache:
+	// never use http.DefaultClient for outbound calls in production — it has
+	// no timeout, so one hung upstream leaks a goroutine per request forever.
 	HTTPClient *http.Client
 }
 
 const defaultNBUBaseURL = "https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange"
+
+// Name implements Provider.
+func (p *NBUProvider) Name() string { return "nbu" }
 
 // nbuRow is one row of the NBU response.
 type nbuRow struct {
 	Rate         float64 `json:"rate"`
 	CC           string  `json:"cc"`
 	ExchangeDate string  `json:"exchangedate"` // DD.MM.YYYY
+}
+
+// defaultRateClient returns the shared default HTTP client for live rate
+// providers: a timeout PLUS the cached/limited transport (1-min TTL,
+// 1-min interval). One client per process means the agent's tool calls and
+// the compare tool's fetches share one cache — two calls to the same URL
+// within a minute cost one upstream request.
+func defaultRateHTTPClient() *http.Client {
+	return &http.Client{
+		Timeout:   10 * time.Second,
+		Transport: NewCachedTransport(),
+	}
 }
 
 // RatesToUAH implements Provider.
@@ -168,7 +192,7 @@ func (p *NBUProvider) RatesToUAH(ctx context.Context) (map[string]float64, strin
 	}
 	client := p.HTTPClient
 	if client == nil {
-		client = &http.Client{Timeout: 10 * time.Second}
+		client = defaultRateHTTPClient()
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, base+"?json", nil)
@@ -217,10 +241,175 @@ type FixtureProvider struct {
 	Err   error
 }
 
+// Name implements Provider.
+func (p *FixtureProvider) Name() string { return "fixture" }
+
 // RatesToUAH implements Provider.
 func (p *FixtureProvider) RatesToUAH(context.Context) (map[string]float64, string, error) {
 	if p.Err != nil {
 		return nil, "", p.Err
 	}
 	return p.Rates, p.Date, nil
+}
+
+// MonoProvider reads monobank's public currency rates. Like the NBU it needs
+// no API key, so the live path runs for every learner; unlike the NBU it
+// publishes bank buy/sell spreads instead of official directory rates.
+//
+// Two things make this a different KIND of upstream, worth teaching next to
+// the NBU rather than instead of it:
+//
+//   - Rate limits are a published contract, not a rumour: /bank/currency may
+//     be polled at most once per 5 minutes (per the OpenAPI description,
+//     v250818). A caching layer belongs in front of it, not a retry loop.
+//   - Its public surface is JSON with no schema document at that endpoint
+//     (the docs page inlines an OpenAPI 3.0.3 spec client-side), so the
+//     response contract lives in the struct below, exactly like
+//     nbuRow above.
+type MonoProvider struct {
+	// BaseURL defaults to monobank's public API. Tests point it at an
+	// httptest server.
+	BaseURL string
+	// HTTPClient defaults to defaultRateHTTPClient(): a timeout plus the
+	// shared 1-minute cached/limited transport. Monobank's published limit is
+	// one call per 5 minutes per /bank/currency — the limiter is the floor,
+	// the cache is the reason a session usually never needs the second call.
+	HTTPClient *http.Client
+}
+
+const defaultMonoBaseURL = "https://api.monobank.ua"
+
+// iso4217Numeric maps the ISO 4217 numeric codes monobank publishes instead
+// of three-letter codes. UAH is 980. The map is deliberately small and
+// hand-checked; any code missing from it is SKIPPED, not guessed — an unknown
+// pair then surfaces as ErrUnknownCurrency at the Convert boundary, exactly
+// like an unknown NBU row.
+var iso4217Numeric = map[int]string{
+	980: "UAH", 840: "USD", 978: "EUR", 826: "GBP", 392: "JPY",
+	756: "CHF", 156: "CNY", 784: "AED", 985: "PLN", 124: "CAD",
+	36:  "AUD", 203: "CZK", 208: "DKK", 348: "HUF", 410: "KRW",
+	578: "NOK", 702: "SGD", 792: "TRY", 860: "UZS", 933: "BYN",
+	944: "AZN", 971: "AFN", 8:   "ALL", 51:  "AMD", 32:  "ARS",
+	643: "RUB", 498: "MDL", 941: "RSD", 975: "BGN", 352: "ISK",
+	986: "BRL", 554: "NZD", 682: "SAR", 704: "VND", 780: "TND",
+}
+
+// monoRow is one row of monobank's /bank/currency response. currencyCodeA/B
+// are ISO 4217 numeric codes, and exactly one of rateBuy/rateSell/rateCross
+// is set per row.
+type monoRow struct {
+	CurrencyCodeA int     `json:"currencyCodeA"`
+	CurrencyCodeB int     `json:"currencyCodeB"`
+	Date          int64   `json:"date"`
+	RateBuy       float64 `json:"rateBuy"`
+	RateSell      float64 `json:"rateSell"`
+	RateCross     float64 `json:"rateCross"`
+}
+
+// Name implements Provider.
+func (p *MonoProvider) Name() string { return "monobank" }
+
+// RatesToUAH implements Provider. Only pairs with B=UAH (980) are usable for
+// our cross-rating axis; other rows (e.g. EUR/USD) are skipped rather than
+// guessed. rateBuy and rateSell are averaged into one rate, the same number a
+// human sees as the midpoint; rateCross is used as-is.
+func (p *MonoProvider) RatesToUAH(ctx context.Context) (map[string]float64, string, error) {
+	rows, err := p.RatesToUAHDetailed(ctx)
+	if err != nil {
+		return nil, "", err
+	}
+	out := make(map[string]float64, len(rows))
+	for _, r := range rows {
+		out[r.CC] = r.Rate
+	}
+	// The freshest date wins: rows are already filtered to usable UAH pairs.
+	var freshest time.Time
+	for _, r := range rows {
+		if t, err := time.Parse("2006-01-02", r.Date); err == nil && t.After(freshest) {
+			freshest = t
+		}
+	}
+	if freshest.IsZero() {
+		return nil, "", errors.New("no UAH pairs in rate list")
+	}
+	return out, freshest.Format("2006-01-02"), nil
+}
+
+// MonoQuote is one UAH pair from monobank, kept at the buy/sell level.
+type MonoQuote struct {
+	CC    string  `json:"cc"`
+	Buy   float64 `json:"buy"`   // 0 when monobank publishes only a cross rate
+	Sell  float64 `json:"sell"`  // 0 when cross
+	Cross float64 `json:"cross"` // 0 when buy/sell
+	Rate  float64 `json:"rate"`  // midpoint of buy/sell, or the cross itself
+	Date  string  `json:"date"`  // ISO date of this row
+}
+
+// RatesToUAHDetailed is RatesToUAH without collapsing buy/sell into one
+// number: the compare tool needs the spread, not just the midpoint. Same
+// filtering rules (UAH pairs, known ISO codes, positive rates).
+func (p *MonoProvider) RatesToUAHDetailed(ctx context.Context) ([]MonoQuote, error) {
+	base := p.BaseURL
+	if base == "" {
+		base = defaultMonoBaseURL
+	}
+	client := p.HTTPClient
+	if client == nil {
+		client = defaultRateHTTPClient()
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, base+"/bank/currency", nil)
+	if err != nil {
+		return nil, fmt.Errorf("build request: %w", err)
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("get rates: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status %s", resp.Status)
+	}
+
+	var rows []monoRow
+	if err := json.NewDecoder(resp.Body).Decode(&rows); err != nil {
+		return nil, fmt.Errorf("decode rates: %w", err)
+	}
+	if len(rows) == 0 {
+		return nil, errors.New("empty rate list")
+	}
+
+	var out []MonoQuote
+	for _, row := range rows {
+		if row.CurrencyCodeB != 980 { // UAH only
+			continue
+		}
+		code, ok := iso4217Numeric[row.CurrencyCodeA]
+		if !ok {
+			continue
+		}
+		date := time.Unix(row.Date, 0).UTC().Format("2006-01-02")
+		switch {
+		case row.RateBuy > 0 && row.RateSell > 0:
+			out = append(out, MonoQuote{
+				CC:   code,
+				Buy:  row.RateBuy,
+				Sell: row.RateSell,
+				Rate: (row.RateBuy + row.RateSell) / 2,
+				Date: date,
+			})
+		case row.RateCross > 0:
+			out = append(out, MonoQuote{
+				CC:    code,
+				Cross: row.RateCross,
+				Rate:  row.RateCross,
+				Date:  date,
+			})
+		}
+	}
+	if len(out) == 0 {
+		return nil, errors.New("no UAH pairs in rate list")
+	}
+	return out, nil
 }

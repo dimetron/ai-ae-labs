@@ -177,17 +177,28 @@ Rules:
   that you could not get the rate. Never invent a number.`
 
 // NewAgent wires the model and tool into an LlmAgent.
-func NewAgent(m model.LLM, p Provider) (agent.Agent, error) {
+//
+// Tool surface (least agency in action): the local typed rate tool is
+// always there. The external mono-go-mcp toolset is added only when the
+// server binary is resolvable — the model sees exactly the tools we wired,
+// never a "maybe". Pass toolsets=nil for the core lab shape (one local
+// tool), which is what tests do.
+func NewAgent(m model.LLM, p Provider, extraToolsets ...tool.Toolset) (agent.Agent, error) {
 	rateTool, err := NewRateTool(p)
 	if err != nil {
 		return nil, err
 	}
+	var toolsets []tool.Toolset
+	if len(extraToolsets) > 0 {
+		toolsets = append(toolsets, extraToolsets...)
+	}
 	a, err := llmagent.New(llmagent.Config{
 		Name:        "currency_agent",
 		Model:       m,
-		Description: "Answers currency-exchange questions using live NBU rates.",
+		Description: "Answers currency-exchange questions using live exchange rates (NBU or monobank).",
 		Instruction: instruction,
 		Tools:       []tool.Tool{rateTool},
+		Toolsets:    toolsets,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("build agent: %w", err)

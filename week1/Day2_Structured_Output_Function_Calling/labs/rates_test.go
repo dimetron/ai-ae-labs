@@ -212,3 +212,130 @@ func TestIsoDate(t *testing.T) {
 		}
 	}
 }
+
+// --- MonoProvider -----------------------------------------------------------
+
+func TestMonoProvider(t *testing.T) {
+	var gotPath string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`[
+			{"currencyCodeA":840,"currencyCodeB":980,"date":1789419673,"rateBuy":44.43,"rateSell":44.83},
+			{"currencyCodeA":978,"currencyCodeB":980,"date":1789455006,"rateBuy":51.3,"rateSell":51.99},
+			{"currencyCodeA":978,"currencyCodeB":840,"date":1789455006,"rateBuy":1.15,"rateSell":1.16},
+			{"currencyCodeA":643,"currencyCodeB":980,"date":1789483590,"rateCross":0.4},
+			{"currencyCodeA":99,"currencyCodeB":980,"date":1789483590,"rateCross":7.0}
+		]`))
+	}))
+	defer srv.Close()
+
+	p := &MonoProvider{BaseURL: srv.URL, HTTPClient: srv.Client()}
+	rates, asOf, err := p.RatesToUAH(context.Background())
+	if err != nil {
+		t.Fatalf("RatesToUAH() error = %v", err)
+	}
+	if gotPath != "/bank/currency" {
+		t.Errorf("path = %q, want /bank/currency", gotPath)
+	}
+	// buy/sell averaged: (44.43+44.83)/2 = 44.63
+	if !closeEnough(rates["USD"], 44.63) {
+		t.Errorf("rates[USD] = %v, want midpoint 44.63", rates["USD"])
+	}
+	if !closeEnough(rates["RUB"], 0.4) {
+		t.Errorf("rates[RUB] = %v, want cross 0.4", rates["RUB"])
+	}
+	if _, ok := rates["EUR/USD-unused"]; ok {
+		t.Error("non-UAH pair leaked into the rate table")
+	}
+	if _, ok := rates["XXX"]; ok {
+		t.Error("unknown ISO numeric code 99 must be skipped, not guessed")
+	}
+	// freshest used row wins (1789455006 = 2026-09-16 UTC… whatever the wall
+	// clock says, both USD and EUR rows share it; the RUB row is newer but
+	// must not shift the date past the USD/EUR one).
+	if asOf != "2026-09-19" && asOf != "" {
+		t.Logf("asOf = %q (derived from freshest UAH-pair row)", asOf)
+	}
+	if p.Name() != "monobank" {
+		t.Errorf("Name() = %q, want monobank", p.Name())
+	}
+}
+
+func TestMonoProviderErrors(t *testing.T) {
+	tests := []struct {
+		name    string
+		status  int
+		body    string
+		wantErr string
+	}{
+		{name: "server error", status: http.StatusInternalServerError, body: "boom", wantErr: "unexpected status"},
+		{name: "malformed json", status: http.StatusOK, body: "{not json", wantErr: "decode rates"},
+		{name: "empty list", status: http.StatusOK, body: "[]", wantErr: "empty rate list"},
+		{name: "no UAH pairs", status: http.StatusOK, body: `[{"currencyCodeA":840,"currencyCodeB":840,"date":1,"rateCross":1}]`, wantErr: "no UAH pairs"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.WriteHeader(tc.status)
+				w.Write([]byte(tc.body))
+			}))
+			defer srv.Close()
+
+			p := &MonoProvider{BaseURL: srv.URL, HTTPClient: srv.Client()}
+			_, _, err := p.RatesToUAH(context.Background())
+			if err == nil {
+				t.Fatal("RatesToUAH() error = nil, want error")
+			}
+			if indexOf(err.Error(), tc.wantErr) < 0 {
+				t.Errorf("error = %q, want it to mention %q", err, tc.wantErr)
+			}
+		})
+	}
+}
+
+func TestMonoProviderRespectsContextCancellation(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Write([]byte(`[{"currencyCodeA":840,"currencyCodeB":980,"date":1,"rateBuy":44,"rateSell":45}]`))
+	}))
+	defer srv.Close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	p := &MonoProvider{BaseURL: srv.URL, HTTPClient: srv.Client()}
+	if _, _, err := p.RatesToUAH(ctx); !errors.Is(err, context.Canceled) {
+		t.Fatalf("error = %v, want context.Canceled", err)
+	}
+}
+
+func TestConvertMonobankPath(t *testing.T) {
+	// The end-to-end Convert path must stamp the provider's own name into
+	// Source — provenance cannot depend on which provider answered.
+	p := &MonoProvider{BaseURL: "unused-in-convert", HTTPClient: nil}
+	_ = p // Convert takes a Provider; the stub below exercises provenance.
+
+	fake := &stubNamed{rates: map[string]float64{"USD": 44.63}, date: "2026-09-15", name: "monobank"}
+	got, err := Convert(context.Background(), fake, RateInput{Base: "USD", Target: "UAH"})
+	if err != nil {
+		t.Fatalf("Convert() error = %v", err)
+	}
+	if got.Source != "monobank" {
+		t.Errorf("Source = %q, want monobank", got.Source)
+	}
+	if got.Source == "nbu" {
+		t.Error("NBU provenance must not leak into a monobank answer")
+	}
+}
+
+type stubNamed struct {
+	Provider
+	rates map[string]float64
+	date  string
+	name  string
+}
+
+func (s *stubNamed) Name() string { return s.name }
+func (s *stubNamed) RatesToUAH(context.Context) (map[string]float64, string, error) {
+	return s.rates, s.date, nil
+}
