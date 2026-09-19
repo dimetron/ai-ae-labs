@@ -1,0 +1,70 @@
+{
+  "as_of": "08/2026",
+  "source": "PLACEHOLDER — звірити кожен рядок із прайс-листом та документацією провайдера ПЕРЕД записом. Ставки й контекстні вікна змінюються тижнями; chars_per_token — це навмисно груба емпірика, а не справжній BPE.",
+  "models": [
+    {
+      "id": "gemini-flash-latest",
+      "provider": "gemini",
+      "label": "Gemini Flash",
+      "context_tokens": 1000000,
+      "reasoning_effort": "minimal",
+      "tokenizer": {
+        "name": "gemini",
+        "chars_per_token": 4.0
+      },
+      "pricing": {
+        "input_per_mtok": 0.30,
+        "output_per_mtok": 2.50,
+        "self_hosted": false
+      }
+    },
+    {
+      "id": "gpt-5.6",
+      "provider": "openai",
+      "label": "GPT-5.6",
+      "context_tokens": 400000,
+      "reasoning_effort": "medium",
+      "tokenizer": {
+        "name": "o200k-like",
+        "chars_per_token": 3.0
+      },
+      "pricing": {
+        "input_per_mtok": 1.25,
+        "output_per_mtok": 10.00,
+        "self_hosted": false
+      }
+    },
+    {
+      "id": "mock-gpt",
+      "provider": "agentgateway",
+      "label": "Mock через agentgateway (офлайн-шлях, без ключів)",
+      "context_tokens": 128000,
+      "reasoning_effort": "minimal",
+      "tokenizer": {
+        "name": "o200k-like",
+        "chars_per_token": 3.0
+      },
+      "pricing": {
+        "input_per_mtok": 0,
+        "output_per_mtok": 0,
+        "self_hosted": true
+      }
+    },
+    {
+      "id": "qwen3",
+      "provider": "ollama",
+      "label": "Qwen3 (self-hosted)",
+      "context_tokens": 128000,
+      "reasoning_effort": "low",
+      "tokenizer": {
+        "name": "qwen",
+        "chars_per_token": 3.5
+      },
+      "pricing": {
+        "input_per_mtok": 0,
+        "output_per_mtok": 0,
+        "self_hosted": true
+      }
+    }
+  ]
+}

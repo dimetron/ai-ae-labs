@@ -1,0 +1,247 @@
+# yaml-language-server: $schema=https://agentgateway.dev/schema/config
+#
+# agentgateway demo config — multi-provider LLM routing + OpenTelemetry + cost tracking.
+#
+# Verified against agentgateway v1.4.1 (docs at agentgateway.dev/docs/standalone/latest
+# and the published JSON schema at https://agentgateway.dev/schema/config).
+#
+# What each section demonstrates (mapped to the course's teaching points):
+#   config.tracing        -> OpenTelemetry: OTLP trace export to the local collector
+#   config.modelCatalog   -> Cost tracking: per-provider pricing catalog
+#   frontendPolicies      -> Cost tracking: realized USD cost on every access-log line
+#   gateways / llm        -> LLM gateway: OpenAI-compatible API on :4000
+#   llm.models            -> Multi-provider routing: mock (custom), OpenAI, Anthropic,
+#                            Gemini, Ollama Cloud, and (commented out) local Ollama
+#   llm.virtualModels     -> Routing rules: weighted, failover, conditional
+#   llm.models[].guardrails -> Prompt redaction: reject credentials, mask PII
+#   llm.models[].promptCaching -> Provider-native prompt caching (cache markers)
+
+config:
+  # --- OpenTelemetry observability -------------------------------------------
+  # Export traces to the local OTel Collector (docker-compose service "otel-collector").
+  # randomSampling: true means every request that does not already carry a trace
+  # context gets a fresh root span, so the demo always shows traces in Jaeger.
+  tracing:
+    otlpEndpoint: http://otel-collector:4317
+    randomSampling: true
+
+  # --- Cost tracking ----------------------------------------------------------
+  # Price every request with a model cost catalog (per-provider, per-model rates
+  # in USD per 1,000,000 tokens). The file is mounted into the container at /costs.
+  modelCatalog:
+  - file: /costs/catalog.json
+
+  # Expose the Prometheus metrics endpoint on all interfaces so the compose
+  # Prometheus can scrape it (default is localhost:15020, unreachable from a
+  # separate container).
+  statsAddr: 0.0.0.0:15020
+
+# Add the realized USD cost to every access-log line. `llm.cost` is a CEL map
+# with input/output/total; `flatten()` spreads it into cost.input, cost.output, ...
+frontendPolicies:
+  accessLog:
+    add:
+      cost_total: llm.cost.total
+      cost_input: llm.cost.input
+      cost_output: llm.cost.output
+
+# --- LLM gateway entrypoint ---------------------------------------------------
+# A named gateway "llm" on port 4000. The LLM routes attach to it below.
+gateways:
+  llm:
+    port: 4000
+
+llm:
+  gateways:
+  - llm
+
+  models:
+  # --- Backend 1: local mock OpenAI-compatible server (works with no API key) ---
+  # A tiny Go server (./mock-llm) that returns a canned chat completion and
+  # echoes the requested model name so the smoke test can verify routing.
+  - name: mock-gpt
+    visibility: public
+    provider:
+      custom:
+        # Provider identity used for cost-catalog lookup and telemetry.
+        # The catalog (config/catalog.json) prices this provider under "mock".
+        providerOverride: mock
+        formats:
+        - type: completions
+    params:
+      model: mock-gpt
+      baseUrl: http://mock-llm:8080/v1
+    # Provider-native prompt caching: insert cache markers into system prompts
+    # and messages once the prompt exceeds minTokens. This is agentgateway's
+    # "semantic caching" story — it is provider prompt caching, not a vector
+    # similarity cache (see README for the honest caveat).
+    promptCaching:
+      cacheSystem: true
+      cacheMessages: true
+      minTokens: 1024
+    # Prompt redaction / guardrails:
+    #  - request phase: reject prompts that contain credentials
+    #  - response phase: mask email addresses before they reach the client
+    guardrails:
+      request:
+      - regex:
+          action: reject
+          rules:
+          - pattern: "password[=:]\\s*\\S+"
+          - pattern: "api[_-]?key[=:]\\s*\\S+"
+          - pattern: "secret[=:]\\s*\\S+"
+        rejection:
+          status: 400
+          body: |
+            {"error":{"message":"Request contains credentials","type":"invalid_request_error","code":"credentials_detected"}}
+      response:
+      - regex:
+          action: mask
+          rules:
+          - builtin: email
+
+  # --- Backend 2: intentionally dead backend (demonstrates failover) -----------
+  # Nothing listens on mock-llm:9999, so the gateway marks this backend degraded
+  # and the `resilient` virtual model falls through to the next priority.
+  - name: dead-backend
+    visibility: internal
+    provider:
+      custom:
+        formats:
+        - type: completions
+    params:
+      model: dead-backend
+      baseUrl: http://mock-llm:9999/v1
+
+  # Backends 3-7 are the real providers. All of them are OPTIONAL: the gateway
+  # starts and serves `mock-gpt` whether or not any key is set. What is NOT
+  # optional is that every variable reference below exists in the process
+  # environment. agentgateway shell-expands the whole config file at load time
+  # (crates/agentgateway/src/types/local.rs, `shellexpand::full`), and an
+  # *undefined* variable is a hard startup error while an *empty* one is fine.
+  # docker-compose.yml therefore passes each key through with an empty default,
+  # so an unset key on the host arrives as an empty string here. Add a variable
+  # reference to this file only alongside the compose `environment:` block.
+  #
+  # And note that expansion runs over the WHOLE file, comments included — so a
+  # comment must never spell out a dollar-sign variable reference for a name
+  # that is not actually set. That is not hypothetical: writing one here is what
+  # broke `--validate-only` while this config was being extended.
+
+  # --- Backend 3: OpenAI (requires OPENAI_API_KEY) ----------------------------
+  - name: gpt-4o-mini
+    visibility: public
+    provider: openAI
+    params:
+      model: gpt-4o-mini
+      apiKey: "$OPENAI_API_KEY"
+
+  # --- Backend 4: Anthropic (requires ANTHROPIC_API_KEY) -----------------------
+  # The key is attached as `Authorization: Bearer ...` like everywhere else; the
+  # Anthropic path rewrites it to the `x-api-key` header this provider expects.
+  - name: claude-sonnet
+    visibility: public
+    provider: anthropic
+    params:
+      model: claude-sonnet-4-0
+      apiKey: "$ANTHROPIC_API_KEY"
+
+  # --- Backend 5: Google Gemini (requires GEMINI_API_KEY) ----------------------
+  # `gemini` is the Gemini Developer API (generativelanguage.googleapis.com,
+  # OpenAI-compatible path /v1beta/openai/chat/completions) — a plain API key,
+  # no GCP project. Vertex AI is a DIFFERENT provider (`vertex`) that wants
+  # params.vertexProject + params.vertexRegion and Google credentials instead.
+  #
+  # Cost-catalog key gotcha: this provider reports itself as "gcp.gemini", not
+  # "gemini", so config/catalog.json prices it under `providers."gcp.gemini"`.
+  # Pricing pinned станом на 08/2026: 0.75 / 3.75 USD per 1M is the INTRODUCTORY
+  # rate and expires 31.12.2026, after which it doubles to 1.50 / 7.50 USD.
+  # (Dollar signs are omitted on purpose — see the shell-expansion note above.)
+  - name: gemini-flash
+    visibility: public
+    provider: gemini
+    params:
+      model: gemini-3.7-flash
+      apiKey: "$GEMINI_API_KEY"
+
+  # --- Backend 6: Ollama Cloud (requires OLLAMA_API_KEY) -----------------------
+  # READ THIS BEFORE ASSUMING "Ollama означає локально".
+  #
+  # This backend does NOT run on your laptop. It is Ollama's hosted service at
+  # https://ollama.com, and every token leaves your machine. The `ollama` preset
+  # only supplies the wire format and the cost-catalog key ("ollama"); the thing
+  # that decides WHERE the request goes is params.baseUrl:
+  #
+  #   ollama preset default   http://localhost:11434/v1   your laptop
+  #   overridden here to      https://ollama.com/v1       Ollama's servers
+  #
+  # (Preset default verified in crates/llm/src/custom.rs at tag v1.4.1. baseUrl
+  # wins because the preset default is only applied when baseUrl is unset, and
+  # an https baseUrl also turns on backend TLS automatically.)
+  #
+  # Model-id trap, and it is the one the lecture calls out: through the LOCAL
+  # daemon these models carry a `:cloud` tag — `ollama run deepseek-v4-flash:cloud`
+  # is what tells your laptop to offload to the cloud instead of running 284B
+  # parameters it cannot fit. Talking to https://ollama.com/v1 directly there is
+  # no `:cloud` tag to add; use the ids that `GET https://ollama.com/v1/models`
+  # returns (verified live 2026-08-20: deepseek-v4-flash:preview, gpt-oss:120b,
+  # kimi-k3, glm-5.2, qwen3.5:397b, ...). Re-check the list before recording.
+  #
+  # If what you actually need is "дані не виходять із периметра", this is the
+  # wrong backend — uncomment Backend 7 below.
+  - name: deepseek-cloud
+    visibility: public
+    provider: ollama
+    params:
+      model: deepseek-v4-flash:preview
+      baseUrl: https://ollama.com/v1
+      apiKey: "$OLLAMA_API_KEY"
+
+  # --- Backend 7: local Ollama (optional; needs Ollama running on the host) ----
+  # THIS is the one that really runs on your machine — same `ollama` provider
+  # preset as Backend 6, and the ONLY difference is baseUrl: port 11434 on the
+  # host instead of ollama.com. (The preset's own default is localhost:11434,
+  # but "localhost" inside a container is the container, so it has to be spelled
+  # out as host.docker.internal here.) No API key: a local daemon checks none.
+  # Left commented out because it is the only backend whose host may not exist:
+  # host.docker.internal resolves on Docker Desktop / OrbStack, but not on plain
+  # Linux Docker without `extra_hosts`.
+  # - name: ollama-local
+  #   visibility: public
+  #   provider: ollama
+  #   params:
+  #     model: llama3.2
+  #     baseUrl: http://host.docker.internal:11434/v1
+
+  # --- Routing rules (virtual models) ------------------------------------------
+  # Clients request these model names; the gateway picks a concrete backend.
+  virtualModels:
+  # Weighted routing: 90% of traffic to the cheap mock, 10% to OpenAI.
+  - name: smart
+    routing:
+      weighted:
+        targets:
+        - model: mock-gpt
+          weight: 90
+        - model: gpt-4o-mini
+          weight: 10
+
+  # Failover routing: try dead-backend first (always down), fall through to mock-gpt.
+  - name: resilient
+    routing:
+      failover:
+        targets:
+        - model: dead-backend
+          priority: 1
+        - model: mock-gpt
+          priority: 2
+
+  # Conditional routing: pick a backend from a request header (x-tier).
+  - name: tiered
+    routing:
+      conditional:
+        targets:
+        - model: mock-gpt
+          when: request.headers["x-tier"] == "free"
+        - model: gpt-4o-mini
+          when: request.headers["x-tier"] == "pro"

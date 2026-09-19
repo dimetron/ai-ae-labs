@@ -1,0 +1,77 @@
+# https://taskfile.dev
+version: '3'
+
+dotenv: ['.env']
+
+vars:
+  BIN_DIR: bin
+  PROV: '{{.PROV | default "codex"}}'
+
+tasks:
+  default:
+    desc: Показати список доступних команд
+    cmds:
+      - task --list
+
+  run:
+    desc: Запустити агента в інтерактивному консольному режимі
+    cmds:
+      - go run .
+
+  run-console:
+    desc: Запустити в консолі (явно вказати console)
+    cmds:
+      - go run . console
+
+  run-web:
+    desc: Запустити агента з веб-інтерфейсом (Web UI на http://localhost:8080/ui/ + REST API на /api)
+    cmds:
+      - go run . web webui api
+
+  login-codex:
+    desc: Увійти через OpenAI Codex Device Flow (без потреби ручного API-ключа)
+    cmds:
+      - go run ./cmd/login codex
+
+  login:
+    desc: Увійти через OAuth/Device flow (PROV=codex|opencode)
+    cmds:
+      - go run ./cmd/login {{.PROV}}
+
+  build:
+    desc: Скомпілювати бінарні файли у bin/
+    cmds:
+      - mkdir -p {{.BIN_DIR}}
+      - go build -o {{.BIN_DIR}}/adk-quickstart .
+      - go build -o {{.BIN_DIR}}/login ./cmd/login
+    sources:
+      - '**/*.go'
+      - 'resources/**/*'
+      - 'AGENTS.md'
+    generates:
+      - '{{.BIN_DIR}}/adk-quickstart'
+      - '{{.BIN_DIR}}/login'
+
+  test:
+    desc: Запустити всі модульні тести
+    cmds:
+      - go test -v ./...
+
+  vet:
+    desc: Перевірити код за допомогою go vet
+    cmds:
+      - go vet ./...
+
+  fmt:
+    desc: Відформатувати всі Go файли через gofmt
+    cmds:
+      - gofmt -w .
+
+  verify:
+    desc: Повний цикл верифікації перед комітом (форматування, vet, тести, компіляція)
+    cmds:
+      - task: fmt
+      - task: vet
+      - task: test
+      - task: build
+      - echo "==> Все успішно перевірено!"

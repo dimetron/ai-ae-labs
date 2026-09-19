@@ -1,0 +1,188 @@
+[
+  {
+    "cc": "USD",
+    "rate": 44.6305,
+    "kind": "midpoint",
+    "date": "2026-09-14"
+  },
+  {
+    "cc": "EUR",
+    "rate": 51.64565,
+    "kind": "midpoint",
+    "date": "2026-09-15"
+  },
+  {
+    "cc": "GBP",
+    "rate": 60.7688,
+    "kind": "cross",
+    "date": "2026-09-15"
+  },
+  {
+    "cc": "JPY",
+    "rate": 0.2925,
+    "kind": "cross",
+    "date": "2026-09-15"
+  },
+  {
+    "cc": "CHF",
+    "rate": 54.9461,
+    "kind": "cross",
+    "date": "2026-09-15"
+  },
+  {
+    "cc": "CNY",
+    "rate": 6.6845,
+    "kind": "cross",
+    "date": "2026-09-15"
+  },
+  {
+    "cc": "AED",
+    "rate": 12.2061,
+    "kind": "cross",
+    "date": "2026-09-15"
+  },
+  {
+    "cc": "AFN",
+    "rate": 0.6916,
+    "kind": "cross",
+    "date": "2026-09-14"
+  },
+  {
+    "cc": "ALL",
+    "rate": 0.5678,
+    "kind": "cross",
+    "date": "2026-09-15"
+  },
+  {
+    "cc": "AMD",
+    "rate": 0.1238,
+    "kind": "cross",
+    "date": "2026-09-15"
+  },
+  {
+    "cc": "ARS",
+    "rate": 0.031,
+    "kind": "cross",
+    "date": "2026-09-15"
+  },
+  {
+    "cc": "AUD",
+    "rate": 32.2146,
+    "kind": "cross",
+    "date": "2026-09-15"
+  },
+  {
+    "cc": "AZN",
+    "rate": 26.3711,
+    "kind": "cross",
+    "date": "2026-09-15"
+  },
+  {
+    "cc": "BGN",
+    "rate": 26.4719,
+    "kind": "cross",
+    "date": "2026-09-14"
+  },
+  {
+    "cc": "BRL",
+    "rate": 8.7501,
+    "kind": "cross",
+    "date": "2026-09-15"
+  },
+  {
+    "cc": "BYN",
+    "rate": 14.8066,
+    "kind": "cross",
+    "date": "2026-09-15"
+  },
+  {
+    "cc": "CAD",
+    "rate": 32.3704,
+    "kind": "cross",
+    "date": "2026-09-15"
+  },
+  {
+    "cc": "CZK",
+    "rate": 2.151,
+    "kind": "cross",
+    "date": "2026-09-15"
+  },
+  {
+    "cc": "DKK",
+    "rate": 6.964,
+    "kind": "cross",
+    "date": "2026-09-15"
+  },
+  {
+    "cc": "HUF",
+    "rate": 0.1432,
+    "kind": "cross",
+    "date": "2026-09-15"
+  },
+  {
+    "cc": "ISK",
+    "rate": 0.3706,
+    "kind": "cross",
+    "date": "2026-09-15"
+  },
+  {
+    "cc": "KRW",
+    "rate": 0.0333,
+    "kind": "cross",
+    "date": "2026-09-15"
+  },
+  {
+    "cc": "MDL",
+    "rate": 2.5973,
+    "kind": "cross",
+    "date": "2026-09-15"
+  },
+  {
+    "cc": "NOK",
+    "rate": 4.8842,
+    "kind": "cross",
+    "date": "2026-09-15"
+  },
+  {
+    "cc": "NZD",
+    "rate": 26.1692,
+    "kind": "cross",
+    "date": "2026-09-15"
+  },
+  {
+    "cc": "PLN",
+    "rate": 12.045,
+    "kind": "cross",
+    "date": "2026-09-15"
+  },
+  {
+    "cc": "RSD",
+    "rate": 0.4417,
+    "kind": "cross",
+    "date": "2026-09-15"
+  },
+  {
+    "cc": "SAR",
+    "rate": 11.9376,
+    "kind": "cross",
+    "date": "2026-09-15"
+  },
+  {
+    "cc": "SGD",
+    "rate": 35.4048,
+    "kind": "cross",
+    "date": "2026-09-15"
+  },
+  {
+    "cc": "UZS",
+    "rate": 0.0038,
+    "kind": "cross",
+    "date": "2026-09-15"
+  },
+  {
+    "cc": "VND",
+    "rate": 0.0017,
+    "kind": "cross",
+    "date": "2026-09-15"
+  }
+]

@@ -1,0 +1,14 @@
+# Prometheus scrape config for the agentgateway demo.
+# agentgateway exposes Prometheus-format metrics on :15020 (config.statsAddr).
+# The OTel Collector re-exports any OTLP metrics it receives on :8889.
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+- job_name: agentgateway
+  static_configs:
+  - targets: ["agentgateway:15020"]
+
+- job_name: otel-collector
+  static_configs:
+  - targets: ["otel-collector:8889"]

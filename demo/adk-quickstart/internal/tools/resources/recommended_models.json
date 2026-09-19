@@ -1,0 +1,225 @@
+{
+  "version": "2026.1",
+  "description": "Recommended LLM models for the AI Agents Engineering course (demo/adk-quickstart)",
+  "default_model": "gemini-3.7-flash",
+  "models": [
+    {
+      "id": "gemini-3.7-flash",
+      "name": "Gemini 3.7 Flash",
+      "provider": "gemini",
+      "lab": "Google",
+      "env_var": "GEMINI_API_KEY",
+      "alternative_env_var": "GOOGLE_API_KEY",
+      "api_key_url": "https://aistudio.google.com/apikey",
+      "tier": "default_workhorse",
+      "category": "hybrid_reasoning_fast",
+      "context_window": 1048576,
+      "max_output_tokens": 65536,
+      "cost_per_million": {
+        "input": 0.15,
+        "output": 0.60,
+        "cache_read": 0.0375
+      },
+      "capabilities": {
+        "reasoning": true,
+        "tool_calling": true,
+        "structured_output": true,
+        "vision": true,
+        "open_weights": false
+      },
+      "course_role": "Головна модель курсу за замовчуванням: надзвичайно висока швидкість, 1M контекст, якісний tool use та збалансоване гібридне міркування для лабораторних робіт ADK Go.",
+      "recommended_for": [
+        "ADK Go v2 quickstart labs",
+        "Fast conversational agents",
+        "Cost-effective prototyping",
+        "Multimodal text + image analysis"
+      ]
+    },
+    {
+      "id": "claude-haiku-4.5",
+      "name": "Claude Haiku 4.5",
+      "provider": "anthropic",
+      "lab": "Anthropic",
+      "env_var": "ANTHROPIC_API_KEY",
+      "api_key_url": "https://console.anthropic.com/",
+      "tier": "fast_reasoning",
+      "category": "subagent_tier",
+      "context_window": 200000,
+      "max_output_tokens": 8192,
+      "cost_per_million": {
+        "input": 1.00,
+        "output": 5.00,
+        "cache_read": 0.10
+      },
+      "capabilities": {
+        "reasoning": true,
+        "tool_calling": true,
+        "structured_output": true,
+        "vision": true,
+        "open_weights": false
+      },
+      "course_role": "Швидкий та точний subagent tier: ідеальний вибір для паралельних субагентів, парсингу, суворої валідації схем та швидкого виклику інструментів.",
+      "recommended_for": [
+        "Subagent delegation",
+        "Fast tool calling",
+        "Structured data extraction",
+        "Low-latency classification"
+      ]
+    },
+    {
+      "id": "claude-sonnet-5",
+      "name": "Claude Sonnet 5",
+      "provider": "anthropic",
+      "lab": "Anthropic",
+      "env_var": "ANTHROPIC_API_KEY",
+      "api_key_url": "https://console.anthropic.com/",
+      "tier": "frontier_coding",
+      "category": "software_engineering",
+      "context_window": 200000,
+      "max_output_tokens": 64000,
+      "cost_per_million": {
+        "input": 3.00,
+        "output": 15.00,
+        "cache_read": 0.30
+      },
+      "capabilities": {
+        "reasoning": true,
+        "tool_calling": true,
+        "structured_output": true,
+        "vision": true,
+        "open_weights": false
+      },
+      "course_role": "Флагманська інженерна модель курсу: еталонна якість у генерації складного коду, архітектурному проектуванні агентів, Computer Use та глибокому аналізі.",
+      "recommended_for": [
+        "Complex coding & refactoring",
+        "Multi-agent workflow orchestration",
+        "High-stakes reasoning",
+        "Autonomous agent loops"
+      ]
+    },
+    {
+      "id": "gpt-5.6-luna",
+      "name": "GPT-5.6 Luna",
+      "provider": "openai",
+      "lab": "OpenAI",
+      "env_var": "OPENAI_API_KEY",
+      "api_key_url": "https://platform.openai.com/",
+      "tier": "economical_reasoning",
+      "category": "long_context_agent",
+      "context_window": 1000000,
+      "max_output_tokens": 128000,
+      "cost_per_million": {
+        "input": 1.00,
+        "output": 6.00,
+        "cache_read": 0.10
+      },
+      "capabilities": {
+        "reasoning": true,
+        "tool_calling": true,
+        "structured_output": true,
+        "vision": true,
+        "open_weights": false
+      },
+      "course_role": "Економічний reasoning-рівень нового покоління OpenAI: поєднує 1M контекстне вікно, адаптивне міркування та доступну ціну для тривалих агентних сесій.",
+      "recommended_for": [
+        "Long-horizon agent execution",
+        "Large codebase analysis",
+        "Mathematical and logical reasoning",
+        "Extended context tasks"
+      ]
+    },
+    {
+      "id": "gpt-4o",
+      "name": "GPT-4o",
+      "provider": "openai",
+      "lab": "OpenAI",
+      "env_var": "OPENAI_API_KEY",
+      "api_key_url": "https://platform.openai.com/",
+      "tier": "general_multimodal",
+      "category": "industry_standard",
+      "context_window": 128000,
+      "max_output_tokens": 16384,
+      "cost_per_million": {
+        "input": 2.50,
+        "output": 10.00,
+        "cache_read": 1.25
+      },
+      "capabilities": {
+        "reasoning": false,
+        "tool_calling": true,
+        "structured_output": true,
+        "vision": true,
+        "open_weights": false
+      },
+      "course_role": "Індустріальний стандарт для загальних мультимодальних завдань, надійного виклику JSON-схем та інтеграції з екосистемою OpenAI.",
+      "recommended_for": [
+        "General tool calling",
+        "Structured JSON generation",
+        "Image interpretation",
+        "Established production setups"
+      ]
+    },
+    {
+      "id": "ollama/deepseek-v4-flash:0731",
+      "name": "DeepSeek V4 Flash (0731)",
+      "provider": "ollama",
+      "lab": "DeepSeek",
+      "env_var": "OLLAMA_API_KEY",
+      "api_key_url": "https://ollama.com/library/deepseek-v4-flash",
+      "tier": "local_open_weights",
+      "category": "self_hosted_reasoning",
+      "context_window": 131072,
+      "max_output_tokens": 128000,
+      "cost_per_million": {
+        "input": 0.00,
+        "output": 0.00,
+        "cache_read": 0.00
+      },
+      "capabilities": {
+        "reasoning": true,
+        "tool_calling": true,
+        "structured_output": true,
+        "vision": false,
+        "open_weights": true
+      },
+      "course_role": "Головна open-weights модель для локального розгортання через Ollama: 304B MoE архітектура, вбудоване міркування, підтримка tool call без зовнішніх хмарних витрат.",
+      "recommended_for": [
+        "Local offline agent execution",
+        "Privacy-preserving workflows",
+        "Cost-free experimentation",
+        "Open-weights MoE evaluation"
+      ]
+    },
+    {
+      "id": "ollama/llama3",
+      "name": "Llama 3",
+      "provider": "ollama",
+      "lab": "Meta",
+      "env_var": "OLLAMA_API_KEY",
+      "api_key_url": "https://ollama.com/library/llama3",
+      "tier": "local_lightweight",
+      "category": "edge_deployment",
+      "context_window": 8192,
+      "max_output_tokens": 4096,
+      "cost_per_million": {
+        "input": 0.00,
+        "output": 0.00,
+        "cache_read": 0.00
+      },
+      "capabilities": {
+        "reasoning": false,
+        "tool_calling": true,
+        "structured_output": true,
+        "vision": false,
+        "open_weights": true
+      },
+      "course_role": "Легковагова локальна модель для швидкої перевірки роботи пайплайну на машинах з обмеженими ресурсами (Macbook/ноутбук).",
+      "recommended_for": [
+        "Lightweight local testing",
+        "Resource-constrained environments",
+        "Simple prompt testing",
+        "Offline CI/CD runners"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+
+# go build in a single-package dir writes the binary next to main.go
+demo/1_ai-gateway/mock-llm/mock-llm
+
+# `make build` / `make verify` in demo/adk-quickstart writes binaries here
+demo/adk-quickstart/bin/

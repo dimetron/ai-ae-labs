@@ -1,0 +1,13 @@
+# Grafana dashboard provider. No dashboards are shipped with the demo;
+# use Explore (Prometheus / Jaeger datasources) to query metrics and traces.
+apiVersion: 1
+
+providers:
+- name: default
+  orgId: 1
+  folder: ""
+  type: file
+  disableDeletion: false
+  updateIntervalSeconds: 30
+  options:
+    path: /var/lib/grafana/dashboards
