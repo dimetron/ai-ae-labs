@@ -18,6 +18,9 @@ vars:
   # The coverage gate (AGENTS.md §4). Raise it as packages improve; never lower
   # it to make a red gate green.
   COVER_MIN: '85'
+  # Lab package paths, so the per-day run tasks stay one line each.
+  DAY1: ./week1/Day1_Models_and_Frameworks_Landscape/labs
+  DAY2: ./week1/Day2_Structured_Output_Function_Calling/labs
 
 tasks:
   default:
@@ -154,3 +157,43 @@ tasks:
       vars: [PKG]
     cmds:
       - go run {{.PKG}}
+
+  # Per-day entry points. Console is the interactive launcher (`console` reads
+  # stdin and answers one request); web is the ADK Web UI on :8080 plus the REST
+  # API the UI calls. Day 1 needs a provider key for the model; Day 2 also runs
+  # key-free with `task week1:day2:console:offline`.
+
+  week1:day1:console:
+    desc: 'День 1: агент в інтерактивній консолі (потрібен ключ провайдера)'
+    cmds:
+      - go run {{.DAY1}} console
+
+  week1:day1:web:
+    desc: 'День 1: Web UI на http://localhost:8080/ui/ + REST API на /api'
+    cmds:
+      - go run {{.DAY1}} web webui api
+
+  week1:day2:console:
+    desc: 'День 2: консоль з живими курсами НБУ (потрібен ключ провайдера)'
+    cmds:
+      - go run {{.DAY2}} console
+
+  week1:day2:console:offline:
+    desc: 'День 2: консоль на фікстурних курсах — без ключа й без мережі'
+    cmds:
+      - go run {{.DAY2}} -offline console
+
+  week1:day2:console:monobank:
+    desc: 'День 2: консоль з курсами monobank (-provider monobank)'
+    cmds:
+      - go run {{.DAY2}} -provider monobank console
+
+  week1:day2:web:
+    desc: 'День 2: Web UI на http://localhost:8080/ui/ + REST API на /api'
+    cmds:
+      - go run {{.DAY2}} web webui api
+
+  week1:day2:compare:
+    desc: 'День 2: таблиця NBU vs monobank side-by-side (модель не потрібна)'
+    cmds:
+      - go run {{.DAY2}} compare
