@@ -1,3 +1,18 @@
+# Real provider credentials. apps/.env-example is the template that IS
+# committed; apps/.env is your working copy and must never be.
+#
+# The name matters: internal/adkenv walks up from the working directory
+# looking for exactly "apps/.env", so this is the path a learner creates the
+# moment they follow the README.
+apps/.env
+
+# The standalone agentgateway demo keeps its own env file.
+demo/1_ai-gateway/.env
+
+# `go build ./<dir>/` writes the binary into the CURRENT directory, named after
+# the target dir. Building a lab from the repo root therefore drops an 80+ MB
+# executable at the root, named "labs" — which is a directory in this tree.
+/labs
 
 # go build in a single-package dir writes the binary next to main.go
 demo/1_ai-gateway/mock-llm/mock-llm

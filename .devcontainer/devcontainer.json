@@ -1,0 +1,151 @@
+// ai-ae-labs development container.
+//
+// Adapted from the pi-go container (github.com/dimetron/pi-go/.devcontainer),
+// trimmed to what this repository does. This is the week-1 branch: it carries
+// `week1/`, `internal/`, `apps/` and the two demos, and no Taskfile.yml — so
+// the gates are plain `go build ./... && go test ./...` and `gofmt -l .`, the
+// same three AGENTS.md §2 lists. The Docker stack under demo/1_ai-gateway is
+// what docker-in-docker is for here.
+//
+// What is deliberately NOT here, versus pi-go: no Node, Python or Rust, because
+// nothing in this repo starts a language server; no grype/goreleaser, because
+// there is no release or CVE target. pi-go needs those for internal/lsp and its
+// Makefile.
+{
+  "name": "ai-ae-labs",
+  // Debian base + features rather than a Go-tagged image: the Go feature
+  // installs any released version straight from go.dev/dl, so the toolchain can
+  // track the `go` directive in go.mod exactly.
+  "image": "mcr.microsoft.com/devcontainers/base:bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "configureZshAsDefaultShell": true,
+      "upgradePackages": true,
+      "username": "vscode"
+    },
+    // Keep in sync with the `go` directive in go.mod (currently 1.27.1). ADK v2
+    // requires Go >= 1.26.6, so a stale toolchain here is a confusing build
+    // failure rather than a clear one.
+    "ghcr.io/devcontainers/features/go:1": {
+      "version": "1.27.1"
+    },
+    // `docker compose up -d` in demo/1_ai-gateway: agentgateway on :4000, the
+    // mock-llm backend on :8080, and the Jaeger/Prometheus/Grafana stack.
+    // In-docker rather than mounting the host socket because `kind` below needs
+    // a daemon it can own — with a shared host socket the cluster's API server
+    // lands on the *host's* 127.0.0.1, so the kubeconfig kind writes is
+    // unreachable from in here. Costs a privileged container.
+    "ghcr.io/devcontainers/features/docker-in-docker:4": {
+      "moby": false
+    },
+    // Requested explicitly. Note that no week's material uses kind yet — week2
+    // Day4 builds a container image and talks about deploys, but nothing in the
+    // course creates a cluster. It is here to be ready for that, not because a
+    // lab needs it today.
+    "ghcr.io/devcontainers-extra/features/kind:1": {
+      "version": "latest"
+    },
+    // kind is the cluster; minikube would be a second, unused VM driver. kubectl
+    // and helm come along for talking to it.
+    "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {
+      "version": "latest",
+      "helm": "latest",
+      "minikube": "none"
+    },
+    // `gh` is how homework is submitted (README: "gh auth login" once) and how
+    // learners pull the next week from upstream.
+    "ghcr.io/devcontainers/features/github-cli:1.1": {}
+  },
+  "containerEnv": {
+    // Overrides the go feature's default of /go, so the module-cache volume
+    // below can live under the user's home. Do NOT set PATH here: every
+    // toolchain feature contributes its own bin dir through its containerEnv,
+    // and a PATH key in devcontainer.json wins over all of them while
+    // ${containerEnv:PATH} still resolves against the *base image* — which
+    // silently drops /usr/local/go/bin. Extra entries go in remoteEnv.
+    "GOPATH": "/home/vscode/go"
+  },
+  "remoteEnv": {
+    // $GOPATH/bin holds the binaries post-create.sh installs — `pi-go`, `gopls`
+    // and `mono-go-mcp` (the last is what week1/Day2 labs shell out to; see
+    // week1/Day2_Structured_Output_Function_Calling/labs/mcptool.go).
+    //
+    // This only reaches processes the dev container tooling starts, so
+    // post-create.sh writes the same entries to /etc/profile.d — otherwise
+    // `docker exec` and SSH sessions into a Codespace come up without them.
+    "PATH": "/home/vscode/go/bin:/home/vscode/.local/bin:${containerEnv:PATH}"
+
+    // Provider credentials are deliberately NOT forwarded from the host.
+    //
+    // This repo reads keys from the bind-mounted apps/.env (see
+    // internal/adkenv and the README), and adkenv.Load sets a key ONLY when it
+    // is not already in the environment — so a forwarded-but-empty
+    // OPENAI_API_KEY would be "set" and would shadow the file, silently
+    // breaking the documented path. Copy apps/.env-example to apps/.env and put
+    // your keys there; that file is gitignored and is visible in the container.
+    //
+    // If you would rather export keys on the host instead, uncomment the block
+    // below AND delete the matching line from apps/.env, so the file does not
+    // silently disagree with the environment:
+    //
+    // "OPENAI_API_KEY": "${localEnv:OPENAI_API_KEY}",
+    // "GOOGLE_API_KEY": "${localEnv:GOOGLE_API_KEY}",
+    // "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}"
+  },
+  // Named volumes: the Go module and build caches are the expensive things to
+  // rebuild, and keeping them off the bind-mounted workspace also keeps them
+  // off the (slow) host filesystem on macOS and Windows.
+  "mounts": [
+    "source=ai-ae-labs-gomodcache,target=/home/vscode/go/pkg/mod,type=volume",
+    "source=ai-ae-labs-gobuildcache,target=/home/vscode/.cache/go-build,type=volume"
+  ],
+  // The demo/1_ai-gateway stack. Silent auto-forward: they are useful when the
+  // stack is up and noise when it is not.
+  "forwardPorts": [4000, 8080, 15000, 16686, 9090, 3000],
+  "portsAttributes": {
+    "4000": { "label": "agentgateway (OpenAI-compatible)", "onAutoForward": "silent" },
+    "8080": { "label": "mock-llm", "onAutoForward": "silent" },
+    "15000": { "label": "agentgateway admin UI", "onAutoForward": "silent" },
+    "16686": { "label": "Jaeger", "onAutoForward": "silent" },
+    "9090": { "label": "Prometheus", "onAutoForward": "silent" },
+    "3000": { "label": "Grafana", "onAutoForward": "silent" }
+  },
+  "onCreateCommand": "bash .devcontainer/post-create.sh",
+  // Cheap, and re-runs after a rebuild or a Git worktree switch.
+  "postStartCommand": "go mod download",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.go",
+        "github.vscode-github-actions",
+        "redhat.vscode-yaml",
+        "tamasfe.even-better-toml",
+        "eamodio.gitlens",
+        "streetsidesoftware.code-spell-checker"
+      ],
+      "settings": {
+        // The Go extension would otherwise install its own `gopls` copy; the
+        // one post-create.sh puts in $GOPATH/bin is the one to use.
+        "go.toolsManagement.autoUpdate": false,
+        "go.useLanguageServer": true,
+        "gopls": {
+          "formatting.local": "github.com/dimetron/ai-eng-course/labs"
+        },
+        "[go]": {
+          "editor.formatOnSave": true,
+          "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+          }
+        },
+        "[markdown]": {
+          // The course material is Ukrainian; the spell checker has no business
+          // underlining every word of it.
+          "cSpell.enabled": false
+        },
+        "terminal.integrated.defaultProfile.linux": "zsh"
+      }
+    }
+  },
+  "remoteUser": "vscode"
+}

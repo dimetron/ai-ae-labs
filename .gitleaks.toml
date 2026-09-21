@@ -1,0 +1,41 @@
+# gitleaks configuration (.gitleaks.toml)
+#
+# The repo's pre-commit hook runs `gitleaks git --staged`, which blocks a commit
+# when it finds something that looks like a credential. Everything matched so far
+# has been a false positive from the entropy-based `generic-api-key` rule, which
+# fires on ordinary prose and ASCII diagrams. Blanket-disabling that rule would
+# be the wrong trade: it is the rule that catches an unstaged real key.
+#
+# So: keep every rule enabled, and allowlist only the specific lines that are
+# provably not credentials. Add to `paths`/`regexes` only after checking the
+# match by hand — an allowlist entry added to "make the commit go through" is
+# how a real key gets committed later.
+#
+# Verify a change to this file with:
+#   gitleaks git --staged --redact      # 0 findings, exit 0
+#   gitleaks detect --no-git --redact   # scans the working tree too
+
+title = "ai-ae-labs"
+
+[extend]
+# Keep the upstream default rule set — do not replace it.
+useDefault = true
+
+[allowlist]
+description = "Documentation examples that are not credentials"
+
+# Markdown in the vendored skill references contains ASCII directory trees whose
+# comments ("# OpenAPI specs, protobuf/gRPC definitions") trip the entropy
+# heuristic of generic-api-key. Skill docs are copied wholesale from upstream and
+# are not where a real credential would ever live.
+paths = [
+    '''\.agents/skills/.*\.md$''',
+]
+
+# The same false positive in prose, wherever it appears: a line that merely names
+# a file layout or a key-shaped placeholder documented as an example.
+regexes = [
+    '''OpenAPI specs, protobuf/gRPC definitions''',
+    # Conventional placeholder forms, which are documentation by definition.
+    '''(?i)(api[_-]?key|token|secret)\s*[:=]\s*(your[_-]|example|placeholder|xxx|\.\.\.|<)''',
+]

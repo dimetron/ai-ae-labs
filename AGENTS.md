@@ -62,9 +62,10 @@ cd demo/1_ai-gateway && docker compose up -d
 
 > **Відоме відхилення:** `gofmt -l .` у корені **не порожній** — 7 файлів у
 > `week1/Day2_Structured_Output_Function_Calling/labs/` (`compare*.go`,
-> `ratelimit*.go`, `rates.go`, `*_e2e_test.go`) не відформатовані. Це стан,
-> успадкований з `main`, а не результат вашої роботи. Форматуйте лише файли,
-> які правите; масовий `gofmt -w` по цих файлах — окремим комітом.
+> `ratelimit*.go`, `rates.go`, `*_e2e_test.go`) не відформатовані. Це стан, у
+> якому матеріали опубліковано, а не результат вашої роботи: не вважайте, що ви
+> щось зламали. Форматуйте лише файли, які правите (`gofmt -w <файл>`); масовий
+> `gofmt -w` по цих файлах — окремим комітом, щоб ваш diff залишався читаним.
 
 ---
 
@@ -78,6 +79,8 @@ internal/                   спільні helper-пакети: adkenv, fakellm,
 apps/.env-example           шаблон ключів провайдерів (копія → apps/.env)
 demo/adk-quickstart/        Week 1 starter — окремий Go-модуль
 demo/1_ai-gateway/          agentgateway + Jaeger/Prometheus/Grafana
+.devcontainer/              dev container: Go + Docker + kind (див. §6)
+.agents/skills/             скіли для AI-агентів: go-senior-developer, asd-ste100 (§7)
 ```
 
 ---
@@ -114,3 +117,61 @@ demo/1_ai-gateway/          agentgateway + Jaeger/Prometheus/Grafana
 - Спільний для лаб helper → `internal/<пакет>/` + тест.
 - Демо курсу → `demo/<назва>/` зі **своїм** `go.mod`, якщо це окремий застосунок.
 - Інструкція для студента → у README відповідної лаби, а не в кореневий README.
+
+---
+
+## 6. Dev container (`.devcontainer/`)
+
+Середовище розробки в контейнері: Go, Docker (docker-in-docker), kind із
+kubectl/helm. Відкрийте теку у VS Code → **Reopen in Container**, або з CLI:
+
+```bash
+devcontainer up --workspace-folder .      # зібрати й запустити
+devcontainer exec --workspace-folder . bash
+```
+
+Що встановлюється (`post-create.sh`, запускається один раз на створення):
+
+| Інструмент | Навіщо |
+|---|---|
+| Go 1.27.1 | збігається з директивою `go` у `go.mod` |
+| build-essential | **обов'язковий**: `go test -race` без C-компілятора падає з `-race requires cgo` |
+| gopls, dlv | мовний сервер і налагоджувач для IDE |
+| gitleaks | ручний скан на секрети (`.githooks` у цій гілці немає) |
+| mono-go-mcp | MCP-сервер, який запускає лаба Day2 (`labs/mcptool.go`) |
+| pi-go (CLI `pi`) | багатопровайдерний клієнт; лаби його **не** імпортують |
+
+Три речі, які варто знати:
+
+- **`pi` — не залежність збірки.** Ті лаби, що використовують pi-go, беруть
+  *бібліотеку* `pimodels` через свій `go.mod`; CLI встановлюється окремо як
+  зручність, тому його версія не мусить збігатися з `go.mod`.
+- **Ключі не прокидаються з хоста навмисно.** `adkenv.Load` встановлює змінну
+  лише тоді, коли її немає в оточенні, тож прокинута-але-порожня
+  `OPENAI_API_KEY` вважалася б «заданою» і **затінила б `apps/.env`**. Ключі
+  кладіть у `apps/.env` — він видно в контейнері (bind mount) і він у `.gitignore`.
+- **`Taskfile.yml` тут немає.** Це гілка тижня 1: команди — звичайні `go build`,
+  `go test`, `gofmt` (див. §2), а не `task check`.
+
+---
+
+## 7. Скіли для AI-агентів (`.agents/skills/`)
+
+| Скіл | Коли застосовувати |
+|---|---|
+| `go-senior-developer` | пишете або рецензуєте Go: ідіоми, TDD, архітектура, безпека |
+| `asd-ste100` | пишете тексти інструкцій: короткі однозначні речення (Simplified Technical English) |
+
+Кожен скіл — тека зі `SKILL.md` (коли застосовувати + стислий огляд) і
+`references/`, `examples/` із докладними матеріалами. Посилання всередині
+`SKILL.md` **відносні** — читайте їх як звичайні посилання.
+
+- `go-senior-developer` описує конвенції, за якими написано цей репозиторій:
+  табличні тести з `t.Parallel()`, обгортання помилок через `fmt.Errorf(... %w)`,
+  «accept interfaces, return structs», корисне нульове значення, явний власник
+  для кожної горутини та заборона пакетів `util`/`common`/`helpers`.
+- `asd-ste100` допомагає з формулюваннями в README, Homework і описах
+  інструментів — там, де важлива однозначність.
+
+Скіли читають агенти (Claude Code, Codex, Gemini CLI тощо), які підтримують
+конвенцію `.agents/`; для людини це просто корисні довідники.
