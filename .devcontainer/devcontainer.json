@@ -1,11 +1,9 @@
 // ai-ae-labs development container.
 //
 // Adapted from the pi-go container (github.com/dimetron/pi-go/.devcontainer),
-// trimmed to what this repository does. This is the week-1 branch: it carries
-// `week1/`, `internal/`, `apps/` and the two demos, and no Taskfile.yml — so
-// the gates are plain `go build ./... && go test ./...` and `gofmt -l .`, the
-// same three AGENTS.md §2 lists. The Docker stack under demo/1_ai-gateway is
-// what docker-in-docker is for here.
+// trimmed to what this repository actually runs: `task check` — fmt, vet,
+// build, test with -race, and the per-package coverage gate — plus the Docker
+// demo stack under demo/1_ai-gateway.
 //
 // What is deliberately NOT here, versus pi-go: no Node, Python or Rust, because
 // nothing in this repo starts a language server; no grype/goreleaser, because
@@ -67,8 +65,8 @@
     "GOPATH": "/home/vscode/go"
   },
   "remoteEnv": {
-    // $GOPATH/bin holds the binaries post-create.sh installs — `pi-go`, `gopls`
-    // and `mono-go-mcp` (the last is what week1/Day2 labs shell out to; see
+    // $GOPATH/bin holds the binaries post-create.sh installs — `task`, `pi` and
+    // `mono-go-mcp` (the last is what week1/Day2 labs shell out to; see
     // week1/Day2_Structured_Output_Function_Calling/labs/mcptool.go).
     //
     // This only reaches processes the dev container tooling starts, so
@@ -118,6 +116,7 @@
     "vscode": {
       "extensions": [
         "golang.go",
+        "task.vscode-task",
         "github.vscode-github-actions",
         "redhat.vscode-yaml",
         "tamasfe.even-better-toml",

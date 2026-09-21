@@ -3,58 +3,70 @@
 //
 // Запуск:
 //
-//	export GOOGLE_API_KEY=...
 //	go run . console
 //
+// Ключ можна не експортувати: якщо в корені репозиторію є apps/.env (шаблон —
+// apps/.env-example), він підхопиться сам. Явний export завжди має приоритет.
 // Без аргументів launcher за замовчуванням бере console (перший sublauncher
 // у full.NewLauncher), а console читає os.Stdin — тому запит можна подати
 // пайпом, без інтерактиву. Зручно для міні-бенчмарку з Завдання 5:
 //
-//	echo "Яка погода у Львові?" | MODEL=gemini-3.7-flash go run .
+//	echo "Яка погода у Львові?" | MODEL=gpt-5.6-luna go run .
+//
+// Провайдера і модель можна не задавати взагалі: якщо в apps/.env (або в
+// оточенні) є ключ провайдера, стартер визначить його сам. Провайдера задає
+// DEFAULT_MODEL_PROVIDER, модель — MODEL. MODEL — це ім'я моделі ЦІЛКОМ,
+// разом із префіксом маршруту:
+//
+//	DEFAULT_MODEL_PROVIDER=agentgateway/ollama go run . console
+//	MODEL=agentgateway/openai/gpt-5.6-luna go run . console
+//
+// Уся логіка вибору провайдера живе в provider.go — цей файл лише збирає
+// застосунок: оточення, бекенд, агент, launcher.
 //
 // Основано на sources/adk-go/examples/quickstart/main.go
 package main
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log"
 	"os"
-	"strings"
 
-	"google.golang.org/genai"
+	"github.com/dimetron/ai-eng-course/labs/internal/adkenv"
 
 	"google.golang.org/adk/v2/agent"
 	"google.golang.org/adk/v2/agent/llmagent"
 	"google.golang.org/adk/v2/cmd/launcher"
 	"google.golang.org/adk/v2/cmd/launcher/full"
-	"google.golang.org/adk/v2/model/gemini"
 	"google.golang.org/adk/v2/tool"
 	"google.golang.org/adk/v2/tool/geminitool"
 )
 
-// defaultModel — свідомо ПЛАВАЮЧИЙ alias, а не датований id на кшталт
-// "gemini-3.7-flash": стартер, який пінить конкретну версію моделі, ламається
-// для всіх студентів у той день, коли провайдер її виводить з обігу.
-const defaultModel = "gemini-flash-latest"
-
-// resolveModelName повертає ім'я моделі зі змінної MODEL або дефолт.
+// loadEnv підтягує apps/.env (шукає вгору від робочої теки), мовчки переживаючи
+// його відсутність — офлайн-шлях має працювати й без жодного ключа.
 //
-// Винесено в окрему функцію рівно заради тесту: на цьому інваріанті тримається
-// Завдання 5 (прогін кількох моделей зміною ОДНІЄЇ змінної). Якби MODEL
-// мовчки ігнорувалась, бенчмарк порівнював би модель саму з собою й видав
-// цілком правдоподібну таблицю — найгірший різновид помилки, бо нічого не падає.
-func resolveModelName(env string) string {
-	if strings.TrimSpace(env) == "" {
-		return defaultModel
+// Явний export GOOGLE_API_KEY=... завжди виграє в файлу: adkenv.Load заповнює
+// лише ті змінні, яких ще немає в оточенні. Тому CI та одноразовий прогін
+// з іншим ключем не потребують правки .env.
+//
+// Порядок обов'язковий: це bootstrap оточення застосунку, і викликати його
+// треба ДО LoadModel — інакше ключі з файлу ще не в оточенні, і автовизначення
+// провайдера їх не побачить.
+func loadEnv() {
+	if err := adkenv.Load("."); err != nil && !errors.Is(err, adkenv.ErrNotFound) {
+		fmt.Fprintf(os.Stderr, "попередження: %v\n", err)
 	}
-	return env
 }
 
 func main() {
 	ctx := context.Background()
 
+	loadEnv()
+
 	// TODO(студент): для міні-бенчмарку запустіть агента по черзі на 2–3 моделях
-	// («станом на серпень 2026»: gemini-flash-latest, gemini-3.7-flash, ...)
+	// («станом на 08/2026»: gemini-3.8-flash, gpt-5.6-luna, deepseek-v4.1-flash:cloud)
 	// і зафіксуйте latency/якість/приблизну вартість у таблиці в README.
 	// Поруч додайте фундаментальну карту: LLM, prompt, context window, tool,
 	// agent, RAG і MCP — що означає кожен термін саме в цій лабі.
@@ -62,17 +74,18 @@ func main() {
 	// Модель береться зі змінної MODEL саме для цього: прогнати той самий
 	// запит на кількох моделях має бути зміною однієї змінної, а не правкою
 	// коду — інакше ви порівнюєте дві різні програми, а не дві моделі.
-	modelName := resolveModelName(os.Getenv("MODEL"))
-	model, err := gemini.NewModel(ctx, modelName, &genai.ClientConfig{
-		APIKey: os.Getenv("GOOGLE_API_KEY"),
-	})
+	// Провайдера задає DEFAULT_MODEL_PROVIDER, а якщо його немає — префікс
+	// у самому MODEL, напр. MODEL=agentgateway/openai/gpt-5.6-luna.
+
+	m, choice, err := LoadModel(ctx)
 	if err != nil {
-		log.Fatalf("Failed to create model: %v", err)
+		log.Fatalf("%v", err)
 	}
+	log.Printf("Модель: %s", choice.Reason)
 
 	a, err := llmagent.New(llmagent.Config{
 		Name:        "weekend_planner",
-		Model:       model,
+		Model:       m,
 		Description: "Агент-планувальник вихідних у моєму місті.",
 		// TODO(студент): напишіть власну інструкцію:
 		//  1) ваше місто та формат відповіді (ранок/день/вечір, бюджет);
@@ -80,7 +93,7 @@ func main() {
 		//  3) агент МУСИТЬ відмовлятися відповідати поза своїм доменом.
 		//  4) у README перевірте context-stress сценарій: коли інформація є
 		//     в prompt, а коли агент має чесно сказати, що потрібен пошук/RAG.
-		Instruction: "Ти — планувальник вихідних. ЗАМІНИ ЦЕЙ ТЕКСТ власною інструкцією.",
+		Instruction: "Ти — планувальник вихідних. Відповідайте, пише українською",
 		Tools: []tool.Tool{
 			geminitool.GoogleSearch{},
 		},

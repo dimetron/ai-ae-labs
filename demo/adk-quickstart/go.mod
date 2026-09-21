@@ -1,9 +1,9 @@
 module github.com/dimetron/ai-eng-course/demo/adk-quickstart
 
-go 1.27.1
+go 1.27.0
 
 require (
-	github.com/dimetron/pi-go v0.1.2
+	github.com/dimetron/pi-go v0.1.7
 	google.golang.org/adk/v2 v2.4.0
 	google.golang.org/genai v1.71.0
 )

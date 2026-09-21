@@ -45,13 +45,13 @@ func (s *stubReadonlyCtx) Value(key any) any {
 // --- ReadonlyContext's own methods: mono tools never read agent state. ---
 
 func (s *stubReadonlyCtx) UserContent() *genai.Content          { return nil }
-func (s *stubReadonlyCtx) InvocationID() string                { return "e2e" }
-func (s *stubReadonlyCtx) AgentName() string                   { return "currency_agent" }
+func (s *stubReadonlyCtx) InvocationID() string                 { return "e2e" }
+func (s *stubReadonlyCtx) AgentName() string                    { return "currency_agent" }
 func (s *stubReadonlyCtx) ReadonlyState() session.ReadonlyState { return nil }
-func (s *stubReadonlyCtx) UserID() string                      { return "e2e" }
-func (s *stubReadonlyCtx) AppName() string                     { return "labs" }
-func (s *stubReadonlyCtx) SessionID() string                   { return "e2e" }
-func (s *stubReadonlyCtx) Branch() string                      { return "" }
+func (s *stubReadonlyCtx) UserID() string                       { return "e2e" }
+func (s *stubReadonlyCtx) AppName() string                      { return "labs" }
+func (s *stubReadonlyCtx) SessionID() string                    { return "e2e" }
+func (s *stubReadonlyCtx) Branch() string                       { return "" }
 
 func TestE2EMonoMCPConnects(t *testing.T) {
 	ts, err := MonoMCPToolset()

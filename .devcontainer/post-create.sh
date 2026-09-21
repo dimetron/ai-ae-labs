@@ -1,13 +1,8 @@
 #!/usr/bin/env bash
 # Provision the ai-ae-labs dev container. Run once by onCreateCommand.
 #
-# Adapted from pi-go's .devcontainer/post-create.sh.
-#
-# This is the week-1 branch: it carries no Taskfile.yml, so this installs no
-# `task` (the full repository has one). The gates are the three AGENTS.md §2
-# commands — `go build ./...`,
-# `go test ./...`, `gofmt -l .` — plus the demos. Everything installed here is
-# either needed by those, or a tool the course material tells learners to use.
+# Adapted from pi-go's .devcontainer/post-create.sh. Everything here is either a
+# tool `task check` invokes, or one the course material tells learners to use.
 set -euo pipefail
 
 # Cache volumes are created root-owned; the Go toolchain needs them writable.
@@ -24,29 +19,34 @@ sudo rm -rf /var/lib/apt/lists/*
 
 # Why build-essential is not optional here.
 #
-# `go test -race` is cgo-backed. Without a C compiler it fails outright with
+# `task test` and `task check` both run `go test -race`, and -race is
+# cgo-backed: without a C compiler it fails outright with
 #   go: -race requires cgo; enable cgo by setting CGO_ENABLED=1
 # rather than degrading to a non-race run. Verified on golang:alpine with no gcc.
 #
-# The root module needs no cgo of its own (CGO_ENABLED=0 builds everywhere),
-# so build-essential exists purely to make the race detector link.
-#
+# This repo needs no cgo for its own code (CGO_ENABLED=0 builds everywhere,
+# including the demo/1_ai-gateway Dockerfile), so build-essential exists purely
+# to make the race detector link.
+
 echo "==> Go tools"
 # gopls: the Go language server, and what the VS Code Go extension drives.
 go install golang.org/x/tools/gopls@latest
 # dlv: debugging from the IDE.
 go install github.com/go-delve/delve/cmd/dlv@latest
 
+echo "==> task"
+# The repo's command surface (Taskfile.yml): task check, task build:all, task
+# run. Pinned to the version the host and docs/devenv-mac.md use (3.53.1).
+go install github.com/go-task/task/v3/cmd/task@v3.53.1
+
 echo "==> gitleaks"
-# On the full repository this is mandatory: .githooks/pre-commit runs gitleaks
-# and blocks EVERY commit when the binary is missing, because the shell reports
-# "command not found" and the hook's fallback branch reads that as a found
-# secret. This branch ships no .githooks and sets no core.hooksPath, so the
-# hazard is not here — but the scan is still worth having, since the whole
-# point of the credential rules in AGENTS.md §4 is that a key never reaches
-# git. Run it by hand before you push:
+# MANDATORY, not a convenience.
 #
-#   gitleaks detect --no-git --redact      # scan the working tree
+# .githooks/pre-commit is `gitleaks git --staged … || { echo blocked; exit 1; }`.
+# When gitleaks is absent the shell reports "command not found", the `||` branch
+# fires, and EVERY commit is refused with a message about a found secret — which
+# reads like a real leak and is not one. Verified by running the hook with a
+# stripped PATH.
 #
 # Module path is github.com/zricethezav/gitleaks/v8, not github.com/gitleaks/…
 # upstream renamed the org but the Go module path was never moved; the
@@ -56,30 +56,24 @@ go install github.com/zricethezav/gitleaks/v8@v8.30.1
 echo "==> mono-go-mcp"
 # week1/Day2 labs attach this MCP server over stdio; mcptool.go resolves it from
 # $GOPATH/bin by name and, when missing, reports an explicit error instead of
-# silently running with local tools only. Optional for the gates, so a failure
-# here is a warning rather than a broken container.
+# silently running with local tools only. Optional for the task gates, so a
+# failure here is a warning rather than a broken container.
 go install github.com/dimetron/mono-go-mcp/cmd/mono-go-mcp@latest ||
   echo "    (skipped: mono-go-mcp install failed — only the week1/Day2 MCP lab needs it)"
 
 echo "==> pi-go CLI"
-# pi-go is two separable things, and it is worth not confusing them:
-#
-#   * the LIBRARY the labs compile against — `github.com/dimetron/pi-go/pimodels`,
-#     imported by demo/adk-quickstart and resolved by its own go.mod. Go handles
-#     that version; nothing here needs to.
-#   * the CLI, `pi`, installed below. No lab imports it or shells out to it, so
-#     it is a convenience, not a build dependency — which is why it tracks the
-#     newest release while the demo stays on whatever its go.mod pins.
-#
-# Installed from the published release binaries rather than `go install`: that
-# module's go.mod carries `replace` directives for its vendored third_party/
-# SDKs, and `go install pkg@version` refuses any module whose build would differ
-# from being the main module:
+# The multi-provider client the labs import as a library (github.com/dimetron/pi-go).
+# Installed from the published release binaries, not `go install`: that module's
+# go.mod carries `replace` directives for its vendored third_party/ SDKs, and
+# `go install pkg@version` refuses any module whose build would differ from
+# being the main module:
 #   The go.mod file for the module providing named packages contains one or more
 #   replace directives.
 # Building from a clone would work but pulls the whole tree; the tarball is
-# faster and is what a learner would grab anyway. Checksums below are from the
-# release's checksums.txt.
+# faster and is what a learner would grab anyway.
+#
+# Keep PI_GO_VERSION in sync with the github.com/dimetron/pi-go requirement in
+# go.mod, or the CLI and the library the labs compile against will disagree.
 PI_GO_VERSION="0.1.6"
 case "$(uname -m)" in
 aarch64 | arm64) pi_go_arch=arm64 ; pi_go_sha=decf9eb1f5591e44c93e6fc1a3fa8848d0541898fc36382ff44b24afbd3aabf8 ;;
@@ -107,9 +101,9 @@ if [ -n "$pi_go_arch" ]; then
 fi
 
 echo "==> warm module cache"
-# The root module and both nested ones, so the first build is not a cold start.
+# The root module and every nested one, so `task build:all` is not a cold start.
 go mod download
-for m in demo/adk-quickstart demo/1_ai-gateway/mock-llm; do
+for m in demo/7_adk-go-evals demo/adk-quickstart examples; do
   [ -f "$m/go.mod" ] && (cd "$m" && go mod download)
 done
 
@@ -151,23 +145,19 @@ git config --local core.hooksPath .githooks || true
 git config --global --add safe.directory "$(pwd)" || true
 
 echo "==> verify"
-# Fail the build loudly if something the gates depend on cannot actually run,
-# rather than at the first lesson.
-for tool in go gitleaks rg docker git gh; do
+# Fail the build loudly if a gate the repo depends on cannot actually run, rather
+# than at the first `task check` in a lesson.
+for tool in go task gitleaks rg docker git gh; do
 	printf '    %-12s %s\n' "$tool" "$(command -v "$tool" || echo 'MISSING')"
 done
+(cd "$(pwd)" && task --version >/dev/null 2>&1) || echo "    task present but not runnable here"
 
 cat <<'EOF'
 
 ai-ae-labs dev container ready.
 
-  go build ./... && go test ./...      # the two gates every commit must pass
-  gofmt -l .                           # the third; gofmt -w <file> to fix
-  go test -race ./...                  # race detector (needs the C compiler)
-
-  go run ./week1/Day1_Models_and_Frameworks_Landscape/labs
-  cd week1/Day1_Models_and_Frameworks_Landscape/labs/solution && go run .   # key-free
-  cd demo/adk-quickstart && make verify                                    # nested module
+  task                 task check          task build:all
+  task test            task cover          task run PKG=./week1/Day1_Models_and_Frameworks_Landscape/labs
 
   pi-go --mode print "hello"   # multi-provider client the labs import
   kind create cluster --name ai-ae-labs     # docker-in-docker; kubectl + helm ready

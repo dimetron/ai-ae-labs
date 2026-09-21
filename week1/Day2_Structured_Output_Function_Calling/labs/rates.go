@@ -287,9 +287,9 @@ const defaultMonoBaseURL = "https://api.monobank.ua"
 var iso4217Numeric = map[int]string{
 	980: "UAH", 840: "USD", 978: "EUR", 826: "GBP", 392: "JPY",
 	756: "CHF", 156: "CNY", 784: "AED", 985: "PLN", 124: "CAD",
-	36:  "AUD", 203: "CZK", 208: "DKK", 348: "HUF", 410: "KRW",
+	36: "AUD", 203: "CZK", 208: "DKK", 348: "HUF", 410: "KRW",
 	578: "NOK", 702: "SGD", 792: "TRY", 860: "UZS", 933: "BYN",
-	944: "AZN", 971: "AFN", 8:   "ALL", 51:  "AMD", 32:  "ARS",
+	944: "AZN", 971: "AFN", 8: "ALL", 51: "AMD", 32: "ARS",
 	643: "RUB", 498: "MDL", 941: "RSD", 975: "BGN", 352: "ISK",
 	986: "BRL", 554: "NZD", 682: "SAR", 704: "VND", 780: "TND",
 }
