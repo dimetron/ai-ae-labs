@@ -1,0 +1,5 @@
+#!/bin/sh
+gitleaks git --staged --redact --verbose || {
+  echo "❌ Коміт заблоковано: у staged-змінах знайдено секрет."
+  exit 1
+}

@@ -1,0 +1,156 @@
+# Taskfile — the repository's command surface (AGENTS.md §2).
+#
+# Why a Taskfile and not a Makefile: `make` requires tabs, has no dependency
+# awareness by default, and its variable syntax is a language of its own.
+# `task` runs each command in its own shell (so one failure cannot poison the
+# next), tracks sources/generates, and reads YAML — which the course materials
+# already use.
+#
+# Run `task` with no arguments for the task list.
+#
+# Requires: task >= 3.x (https://taskfile.dev), Go 1.27+.
+version: "3"
+
+# Fail loudly on an undefined variable rather than silently expanding it to "".
+set: [pipefail]
+
+vars:
+  # The coverage gate (AGENTS.md §4). Raise it as packages improve; never lower
+  # it to make a red gate green.
+  COVER_MIN: '85'
+
+tasks:
+  default:
+    desc: List the available tasks
+    cmds:
+      - task --list
+    silent: true
+
+  # --- build ---------------------------------------------------------------
+
+  build:
+    desc: 'Build every package in the main module (no network, no API keys)'
+    cmds:
+      - go build ./...
+
+  build:all:
+    desc: 'Build the main module plus every nested module (demo/*, examples)'
+    cmds:
+      - go build ./...
+      - task: build:modules
+
+  build:modules:
+    desc: 'Build the nested Go modules (they are not part of ./...)'
+    cmds:
+      - |
+        set -e
+        mods=$(find . -name go.mod -not -path './go.mod' -not -path '*/node_modules/*' \
+                 | sed 's|/go.mod$||' | sort)
+        if [ -z "$mods" ]; then echo "no nested modules found"; exit 0; fi
+        for m in $mods; do
+          echo "→ $m"
+          (cd "$m" && go build ./...)
+        done
+
+  vet:
+    desc: Vet the main module
+    cmds:
+      - go vet ./...
+
+  fmt:
+    desc: Format all Go source
+    cmds:
+      - gofmt -w .
+
+  fmt:check:
+    desc: 'Report files that are not gofmt-clean (fails if any)'
+    cmds:
+      - |
+        unformatted=$(gofmt -l .)
+        if [ -n "$unformatted" ]; then
+          echo "Not gofmt-clean:"; echo "$unformatted"; exit 1
+        fi
+        echo "all files gofmt-clean"
+
+  # --- test ----------------------------------------------------------------
+
+  test:
+    desc: 'Run all tests with race detection'
+    cmds:
+      - go test -race ./...
+
+  test:short:
+    desc: 'Run tests without -race (faster; use before pushing)'
+    cmds:
+      - go test ./...
+
+  test:verbose:
+    desc: 'Run all tests verbosely (AGENTS.md §2)'
+    cmds:
+      - go test -v -race ./...
+
+  test:pkg:
+    desc: 'Test one package: task test:pkg PKG=./week1/...'
+    requires:
+      vars: [PKG]
+    cmds:
+      - go test -race -count=1 {{.PKG}}
+
+  # --- coverage ------------------------------------------------------------
+
+  cover:
+    desc: 'Per-package coverage against the {{.COVER_MIN}}% gate (AGENTS.md §4)'
+    cmds:
+      - sh ./scripts/covgate.sh {{.COVER_MIN}}
+
+  cover:changed:
+    desc: 'Gate only the packages under a path: task cover:changed PKG=week1/Day1'
+    requires:
+      vars: [PKG]
+    cmds:
+      - sh ./scripts/covgate.sh {{.COVER_MIN}} {{.PKG}}
+  cover:html:
+    desc: 'Open per-function coverage for one package: task cover:html PKG=./week1/...'
+    requires:
+      vars: [PKG]
+    cmds:
+      - go test -coverprofile=/tmp/cov-html.out {{.PKG}}
+      - go tool cover -html=/tmp/cov-html.out
+
+  # --- lab helpers ---------------------------------------------------------
+
+  run:
+    desc: 'Run a lab: task run PKG=./week1/Day1_Models_and_Frameworks_Landscape/labs'
+    requires:
+      vars: [PKG]
+    cmds:
+      - go run {{.PKG}}
+
+  # --- aggregate -----------------------------------------------------------
+
+  check:
+    desc: 'Everything a learner should keep green: fmt:check, vet, build, test'
+    cmds:
+      - task: fmt:check
+      - task: vet
+      - task: build
+      - task: test
+
+  # --- week1 ---------------------------------------------------------------
+
+  week1:build:
+    desc: 'Build week1'
+    cmds:
+      - go build ./week1/...
+
+  week1:test:
+    desc: 'Test week1 (race detector)'
+    cmds:
+      - go test -race ./week1/...
+
+  week1:run:
+    desc: 'Run a week1 lab: task week1:run PKG=./week1/Day1_Models_and_Frameworks_Landscape/labs'
+    requires:
+      vars: [PKG]
+    cmds:
+      - go run {{.PKG}}

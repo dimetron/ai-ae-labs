@@ -13,6 +13,8 @@
 Перш ніж будь-який налаштування — побачте агента живим. Клонуйте стартовий шаблон, експортуйте `GOOGLE_API_KEY` і виконайте:
 
 ```bash
+
+cd week1/Day1_Models_and_Frameworks_Landscape/labs
 echo "Яка погода у Львові?" | go run .
 ```
 
