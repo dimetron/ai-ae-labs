@@ -1,0 +1,7 @@
+2026/09/21 17:40:29 Модель: agentgateway/ollama → qwen3.5:4b-mlx
+2026/09/21 17:40:29 internal_logging.go:50: "msg"="parse url" "error"="parse \"127.0.0.1:4317\": first path segment in URL cannot contain colon" "input"="127.0.0.1:4317"
+2026/09/21 17:40:29 invalid OTEL_EXPORTER_OTLP_ENDPOINT value 127.0.0.1:4317: parse "127.0.0.1:4317": first path segment in URL cannot contain colon
+2026/09/21 17:40:29 invalid OTEL_EXPORTER_OTLP_ENDPOINT value 127.0.0.1:4317: parse "127.0.0.1:4317": first path segment in URL cannot contain colon
+2026/09/21 17:40:29 invalid OTEL_EXPORTER_OTLP_ENDPOINT value 127.0.0.1:4317: parse "127.0.0.1:4317": first path segment in URL cannot contain colon
+2026/09/21 17:40:29 traces export: Post "https://localhost:4318/v1/traces": http: server gave HTTP response to HTTPS client
+2026/09/21 17:40:29 telemetry shutdown failed: Post "https://localhost:4318/v1/logs": http: server gave HTTP response to HTTPS client

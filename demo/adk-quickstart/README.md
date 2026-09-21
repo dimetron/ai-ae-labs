@@ -22,16 +22,27 @@
 
 ## 🚀 Швидкий старт (2 хвилини)
 
-### 1. Створіть файл конфігурації `.env`
+### 1. Переконайтеся, що існує `apps/.env`
+
+Демо читає **спільний** файл `apps/.env` репозиторію — так само, як лаби тижня.
+Під час старту `utils.LoadDotEnv()` спершу шукає локальний `./.env`, а якщо його
+немає — піднімається вгору по дереву каталогів до найближчого `apps/.env`.
+Копіювати щось у теку демо **не потрібно**.
+
+Якщо файлу ще немає, створіть його з шаблону:
 
 ```bash
-cp .env.example .env
+cp apps/.env-example apps/.env
 ```
 
 ### 2. Вкажіть API-ключ вашого провайдера
 
 ```bash
-# Google Gemini (за замовчуванням):
+# Local agentgateway (те, що використовують лаби):
+AGENTGATEWAY_API_KEY=agw_sk_...
+# MODEL=agentgateway/gemini/gemini-3.8-flash
+
+# Google Gemini:
 GEMINI_API_KEY=AIzaSy...
 # MODEL=gemini-3.7-flash
 
@@ -56,54 +67,97 @@ GEMINI_API_KEY=AIzaSy...
 
 ### Варіант A: Інтерактивний консольний режим
 
-Запустіть агента через `make` або `go run`:
+Запустіть агента через `task`:
 
 ```bash
-make run
-# або: go run .
+task run
 ```
 
-#### Приклади діалогу в консолі:
+Інші способи запуску того самого режиму:
+
+```bash
+task run-console   # явно вказати підкоманду console
+go run .           # без task-раннера
+go run . console   # без task-раннера, явно console
+```
+
+Агент читає запити зі стандартного вводу. Завершення — `Ctrl+D` (EOF).
+
+### Варіант B: Веб-інтерфейс (Web UI)
+
+ADK Go v2 має вбудований веб-інтерфейс. Запустіть його командою:
+
+```bash
+task run-web
+```
+
+Інші способи запуску того самого режиму:
+
+```bash
+go run . web webui api   # без task-раннера
+```
+
+Після запуску відкрийте браузер за адресою:
+👉 **http://localhost:8080/ui/**
+
+Сервер піднімає три підсистеми одночасно:
+
+| Прапорець | Що піднімає | Адреса |
+|---|---|---|
+| `web` | HTTP-сервер ADK | `http://localhost:8080` |
+| `webui` | веб-інтерфейс для чату з агентом | `http://localhost:8080/ui/` |
+| `api` | REST API для UI (CORS) | `http://localhost:8080/api` |
+
+У веб-інтерфейсі доступний інтерактивний чат з агентом, перемикання сесій, перегляд викликів інструментів (Function Calls), стан агентів (State & Artifacts) та повне трасування подій (Event Traces):
+
+![Google ADK Go v2 Model Expert Agent Web UI](img/screenshoot.png)
+
+### Приклади діалогу
+
+Обидва режими працюють з тим самим агентом і тим самим каталогом. Приклади
+запитів і реальні відповіді агента:
 
 ```text
-User  -> Які топ лабораторії (labs) є в каталозі?
-Agent -> У каталозі зареєстровано понад 300 лабораторій. Найбільші з них:
-         1. OpenAI (650+ моделей) — сімейства gpt, o-series
-         2. Google (310+ моделей) — сімейство gemini
-         3. Qwen / Alibaba (280+ моделей) — сімейства qwen, qwen-coder
-         4. Anthropic (200+ моделей) — сімейства claude-sonnet, claude-opus, claude-haiku
-         5. DeepSeek (130+ моделей) — сімейства deepseek-flash, deepseek-thinking
+User  -> Скільки моделей у каталозі? Одним рядком.
+Agent -> У каталозі налічується 4 823 моделі.
 
-User  -> Порадь дешеву модель для кодинг-агента з підтримкою tool calling і контекстом від 128k токенів.
-Agent -> Рекомендую такі варіанти:
-         1. DeepSeek V4 Flash (DeepSeek / HPC-AI) — 1M context, tool_call=true, reasoning=true, вартість $0.14 input / $0.28 output за 1M токенів (open weights).
-         2. Kimi K2.7 Code (Moonshot AI) — 256k context, спеціалізована для тривалої роботи в репозиторіях, $0.95 input / $4.00 output.
-         3. Claude Haiku 4.5 (Anthropic) — 200k context, швидкий та точний tool use, $1.00 input / $5.00 output.
+User  -> Які топ-3 лабораторії за кількістю моделей?
+Agent -> 1. OpenAI — 659 моделей (сімейства: gpt, gpt-mini, gpt-oss)
+         2. Qwen (Alibaba) — 451 модель (сімейства: qwen, qwen3.6, qwen3.5)
+         3. Google — 319 моделей (сімейства: gemini-flash, gemma, gemini-pro)
+         (На 4-му місці Anthropic із 207 моделями.)
+
+User  -> Порадь 3 дешеві моделі для кодинг-агента з tool calling і контекстом від 128k.
+Agent -> | Модель | Контекст | Input / Output (за 1M) | Tool Calling |
+         | Gemini 3.7 Flash   | 1048k | $0.15 / $0.60 | Так |
+         | DeepSeek V4 Flash  |  128k | $0.00         | Так |
+         | Claude Haiku 4.5   |  200k | $1.00 / $5.00 | Так |
 
 User  -> Які параметри та вартість у anthropic/claude-opus-4.7?
 Agent -> Claude Opus 4.7 (Anthropic):
          - Контекстне вікно: 1 000 000 токенів (1M)
          - Макс. вихід: 128 000 токенів
          - Вартість: $5.00 / 1M input, $25.00 / 1M output, $0.50 / 1M cache read
-         - Можливості: Reasoning (effort: low/medium/high), Tool Call, Multimodal (Text + Image).
+         - Можливості: Reasoning (effort: low/medium/high), Tool Call, Multimodal (Text + Image)
 ```
 
-### Варіант B: Веб-інтерфейс (Web UI)
+### Приклад: передати запит без інтерактивної сесії
 
-ADK v2 має вбудований повнофункціональний веб-інтерфейс. Запустіть його командою:
+Агент читає зі stdin, тож запит можна подати одним рядком — зручно для
+швидкої перевірки, що все налаштовано правильно:
 
 ```bash
-make run-web
-# або: task run-web
-# або: go run . web webui api
+echo "Скільки провайдерів і лабораторій у каталозі?" | go run . console
 ```
 
-Після запуску відкрийте браузер за адресою:
-👉 **http://localhost:8080/ui/**
+### Приклад: змінити порт Web UI
 
-У веб-інтерфейсі доступний інтерактивний чат з агентом, перемикання сесій, перегляд викликів інструментів (Function Calls), стан агентів (State & Artifacts) та повне трасування подій (Event Traces):
+Прапорець `-port` належить підкоманді `web`, тому передається після неї:
 
-![Google ADK Go v2 Model Expert Agent Web UI](img/screenshoot.png)
+```bash
+go run . web -port 9090 webui api
+# UI: http://localhost:9090/ui/
+```
 
 ---
 
@@ -120,21 +174,26 @@ make run-web
 
 ---
 
-## 🛠 Корисні команди (`make` або `task`)
+## 🛠 Корисні команди ([Taskfile](https://taskfile.dev/))
 
-Проєкт підтримує як класичний `make`, так і сучасний [Taskfile](https://taskfile.dev/):
+Усі команди запускаються через `task` з теки `demo/adk-quickstart`:
 
-| `make` команда | `task` команда | Опис |
-|---|---|---|
-| `make help` | `task` (або `task --list`) | Показати перелік усіх доступних команд |
-| `make run` | `task run` | Запустити агента в інтерактивній консолі (`go run .`) |
-| `make run-web` | `task run-web` | Запустити веб-інтерфейс (Web UI) на порту 8080 |
-| `make build` | `task build` | Скомпілювати бінарні файли у `bin/` (`bin/adk-quickstart`, `bin/login`) |
-| `make test` | `task test` | Запустити модульні та офлайн-тести |
-| `make vet` | `task vet` | Запустити аналізатор коду `go vet` |
-| `make verify` | `task verify` | Повна перевірка: форматування, vet, тести, компіляція |
-| `make login-codex` | `task login-codex` | Увійти через OpenAI Codex Device Flow (запускає `cmd/login codex`) |
-| `make login PROV=...` | `task login PROV=...` | Увійти через OAuth/Device (наприклад: `task login PROV=opencode`) |
+| Команда | Опис |
+|---|---|
+| `task` | Показати перелік усіх доступних команд (те саме, що `task --list`) |
+| `task run` | Запустити агента в інтерактивній консолі (`go run .`) |
+| `task run-console` | Те саме, але з явною підкомандою `console` |
+| `task run-web` | Запустити Web UI на порту 8080 (`go run . web webui api`) |
+| `task build` | Скомпілювати бінарні файли у `bin/` (`bin/adk-quickstart`, `bin/login`) |
+| `task test` | Запустити модульні та офлайн-тести |
+| `task vet` | Запустити аналізатор коду `go vet` |
+| `task fmt` | Відформатувати всі Go-файли через `gofmt -w .` |
+| `task verify` | Повна перевірка: форматування, vet, тести, компіляція |
+| `task login-codex` | Увійти через OpenAI Codex Device Flow (запускає `cmd/login codex`) |
+| `task login PROV=...` | Увійти через OAuth/Device (наприклад: `task login PROV=opencode`) |
 
-> **Примітка:** Додаток автоматично підвантажує змінні з локального файлу `.env` при запуску, навіть якщо ви запускаєте `go run .` напряму.
+> **Примітка:** Додаток автоматично підвантажує змінні оточення під час запуску,
+> навіть якщо ви запускаєте `go run .` напряму. Спершу читається локальний `./.env`,
+> а якщо його немає — найближчий `apps/.env` вище по дереву каталогів.
+> Явний `export` у терміналі має пріоритет над файлом.
 

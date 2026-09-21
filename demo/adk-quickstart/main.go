@@ -28,7 +28,7 @@ var systemPrompt string
 var agentsDoc string
 
 const (
-	defaultModel = "gemini-3.7-flash"
+	defaultModel = "gemini-3.8-flash"
 	agentName    = "model_expert_agent"
 	agentDesc    = "Експертний агент з вибору, аналізу характеристик та рекомендацій LLM-моделей (каталог models.dev)."
 )
@@ -72,7 +72,7 @@ func main() {
 	}
 
 	var opts []pimodels.Option
-	if k := os.Getenv("API_KEY"); k != "" {
+	if k := os.Getenv("AGENTGATEWAY_API_KEY"); k != "" {
 		opts = append(opts, pimodels.WithAPIKey(k))
 	}
 	if u := os.Getenv("BASE_URL"); u != "" {

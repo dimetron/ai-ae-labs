@@ -1,87 +1,162 @@
-# agentgateway demo — LLM gateway + observability stack.
+# agentgateway in front of every pi-go provider and the three coding agents,
+# with Postgres behind it for the request log and Jaeger for trace collection.
 #
+#   cp .env.example .env && $EDITOR .env
 #   docker compose up -d
-#   ./smoke-test.sh
 #
-# Services:
-#   agentgateway  the gateway itself (LLM API on :4000, admin UI on :15000, metrics on :15020)
-#   mock-llm      tiny OpenAI-compatible mock backend (no API key needed)
-#   otel-collector OTLP receiver -> Jaeger (traces) + Prometheus (metrics)
-#   jaeger        trace UI
-#   prometheus    metrics scraper
-#   grafana       dashboards over Prometheus + Jaeger
+# To reuse pi-go's own keys instead of a second copy of them:
+#   docker compose --env-file ../../.pi-go/.env up -d
 #
-# Optional real backends: copy .env.example to .env and fill in whichever keys
-# you have (OpenAI, Anthropic, Gemini, Ollama Cloud) to enable those routes.
-# The demo works without any of them — the mock backend is the default target.
-#
-# Every key is passed through as `${VAR:-}` on purpose. agentgateway shell-
-# expands its whole config file at load, and an UNDEFINED variable is a fatal
-# startup error; `:-` turns "unset on the host" into "empty in the container",
-# which the gateway accepts. That is what keeps the zero-key path working.
+# LLM endpoint: http://localhost:4000     UI: http://localhost:4000/ui
+# Traces:       http://localhost:16686    (JAEGER_UI_PORT moves the host port)
 
 services:
   agentgateway:
-    image: cr.agentgateway.dev/agentgateway:v1.4.1
-    container_name: agw
+    # Pinned rather than :latest so a config that validates today keeps working.
+    # config.yaml needs >= v1.5.0 (modelCatalog, provider presets).
+    image: ghcr.io/agentgateway/agentgateway:v1.5.0
+    container_name: agentgateway
+    restart: unless-stopped
     ports:
-      - "4000:4000"                  # OpenAI-compatible LLM API
-      - "127.0.0.1:15000:15000"      # Admin UI
-      - "127.0.0.1:15020:15020"      # Prometheus metrics
-    volumes:
-      - ./config/agentgateway.yaml:/config.yaml:ro
-      - ./config/catalog.json:/costs/catalog.json:ro
+      # Loopback only: the host reaches it at 127.0.0.1:4000 for local CLI use,
+      # and Tailscale serve exposes it externally on port 6000.
+      - "127.0.0.1:4000:4000"
     environment:
-      ADMIN_ADDR: 0.0.0.0:15000
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      OLLAMA_API_KEY: ${OLLAMA_API_KEY:-}
-    command: ["-f", "/config.yaml"]
-    depends_on:
-      - otel-collector
-      - mock-llm
-
-  mock-llm:
-    build: ./mock-llm
-    container_name: mock-llm
-    ports:
-      - "127.0.0.1:8080:8080"
-
-  otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.146.0
-    container_name: otel-collector
+      # Google's OpenAI-compatible endpoint, not the native one — see
+      # CLAUDE.md "Gemini must go through the OpenAI-compatible endpoint".
+      GEMINI_BASE_URL: ${GEMINI_BASE_URL:-https://generativelanguage.googleapis.com/v1beta/openai}
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      XAI_API_KEY: ${XAI_API_KEY:-}
+      OPENCODE_API_KEY: ${OPENCODE_API_KEY:-}
+      # MCP: Tavily's remote server takes its key in the URL query.
+      TAVILY_API_KEY: ${TAVILY_API_KEY:-}
+      OLLAMA_API_KEY_1: ${OLLAMA_API_KEY_1:-}
+      OLLAMA_API_KEY_2: ${OLLAMA_API_KEY_2:-}
+      OLLAMA_API_KEY_3: ${OLLAMA_API_KEY_3:-}
+      # localhost inside a container is the container, so reach the host's
+      # Ollama explicitly. Linux needs the extra_hosts entry below.
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}
+      AZUREOPENAI_API_KEY: ${AZUREOPENAI_API_KEY:-}
+      # Bonsai 2 (ternary 27B) served on the HOST by hack/mlx/start-bonsai2-27b-mlx.sh.
+      # host.docker.internal, not localhost: see extra_hosts below.
+      PRISMML_BASE_URL: ${PRISMML_BASE_URL:-http://host.docker.internal:8477/v1}
+      PRISMML_API_KEY: ${PRISMML_API_KEY:-local}
+      AZURE_OPENAI_RESOURCE_NAME: ${AZURE_OPENAI_RESOURCE_NAME:-}
+      AZURE_OPENAI_API_VERSION: ${AZURE_OPENAI_API_VERSION:-2024-10-21}
+      # The config default points at localhost, which is right for run.sh but
+      # wrong in a container: here Postgres is a sibling service.
+      AGENTGATEWAY_DATABASE_URL: postgresql://agentgateway:agentgateway@postgres:5432/agentgateway
+      AGENTGATEWAY_STORAGE_MODE: ${AGENTGATEWAY_STORAGE_MODE:-file}
+      # Required, and deliberately has no default. config.yaml uses the bare
+      # ${AGENTGATEWAY_API_KEY} for llm.policies.apiKey, so an empty value would
+      # register an empty key that strict mode then accepts. `:?` makes compose
+      # refuse to start with a readable message instead of crash-looping the
+      # container on "error looking key 'AGENTGATEWAY_API_KEY' up".
+      AGENTGATEWAY_API_KEY: ${AGENTGATEWAY_API_KEY:?set AGENTGATEWAY_API_KEY in your env file (see .env.example)}
+      # Catalog paths, resolved against working_dir inside the container.
+      AGENTGATEWAY_BASE_COSTS: ${AGENTGATEWAY_BASE_COSTS:-./base-costs.json}
+      AGENTGATEWAY_PI_ALIASES: ${AGENTGATEWAY_PI_ALIASES:-./pi-aliases.json}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
-      - ./otel/otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
-    ports:
-      - "127.0.0.1:4317:4317"
+      # The DIRECTORY, not the three files inside it. A single-file bind mount
+      # binds one inode. Replacing that file on the host by unlink-then-create
+      # — what a `git checkout` of a deleted file and many editors' save do —
+      # leaves the container holding a mount that resolves to nothing, and
+      # every read, write and watch of it fails:
+      #
+      #   warn  failed to watch path /etc/agentgateway/base-costs.json: No path was found.
+      #   error Failed to reload config: failed to read from file
+      #         `/etc/agentgateway/config.yaml`: No such file or directory (os error 2)
+      #   failed to write to file `./base-costs.json`: No such file or directory (os error 2)
+      #
+      # Replacing it by rename-over survives, so this fails intermittently
+      # depending on which tool touched the file last — and the gateway keeps
+      # serving whatever it loaded at boot, so it reads as "refresh costs is
+      # broken" rather than as a crash. A single-file mount also refuses the
+      # reverse: an atomic save from *inside* the container cannot rename onto
+      # its own mount point (EBUSY, "Device or resource busy").
+      #
+      # Mounting the directory fixes both: the container follows a replacement,
+      # and a restart is no longer the only way to pick up a host-side edit.
+      #
+      # Deliberately NOT :ro — with storage.mode=file the UI saves config
+      # changes by rewriting config.yaml, and POST /api/costs/refresh-base (the
+      # UI's "refresh costs" action) rewrites base-costs.json from models.dev
+      # and hot-reloads it. A read-only mount makes both fail. The container
+      # runs as uid 65532, so on Linux the files must be group/other writable
+      # (chmod 666 config.yaml base-costs.json) for a save to land; Docker
+      # Desktop and OrbStack on macOS map the owner and need nothing.
+      # Set AGENTGATEWAY_STORAGE_MODE=readOnly and append :ro to lock it down.
+      - .:/etc/agentgateway
+      # Mounting the directory also exposes this directory's .env — the keys
+      # compose reads to build the environment above. The gateway has no use
+      # for the file, so shadow it with an empty one. /dev/null is safe as a
+      # single-file mount precisely because nothing ever replaces it.
+      - /dev/null:/etc/agentgateway/.env:ro
+    working_dir: /etc/agentgateway
+    command: ["-f", "/etc/agentgateway/config.yaml"]
     depends_on:
-      - jaeger
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:17
+    container_name: agentgateway-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: agentgateway
+      POSTGRES_USER: agentgateway
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agentgateway}
+    # Not published by default: the gateway reaches it over the compose network.
+    # Uncomment to inspect it with psql from the host.
+    # ports:
+    #   - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agentgateway -d agentgateway"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
 
   jaeger:
-    image: jaegertracing/all-in-one:latest
-    container_name: jaeger
+    # Pinned like the gateway, and for the same reason: a tag that resolves to
+    # something else next month breaks a config that validates today.
+    #
+    # all-in-one, not jaegertracing/jaeger:2.x. v1 keeps the classic UI on
+    # :16686 and takes OTLP on :4317; the 2.x image is an OTel-Collector
+    # rebuild whose config is passed as a file, which is a second thing to
+    # mount and get wrong for a demo that only needs a trace list.
+    image: jaegertracing/all-in-one:1.76.0
+    container_name: agentgateway-jaeger
+    restart: unless-stopped
     ports:
-      - "127.0.0.1:16686:16686"
+      # Loopback only, matching the gateway. 16686 is the query UI and read API.
+      #
+      # Overridable because a Jaeger is a common thing to already have running:
+      # Jaeger Desktop and most "docker run jaeger" recipes take 16686 on all
+      # interfaces, and compose then fails with "port is already allocated".
+      # Set JAEGER_UI_PORT to move this one aside.
+      #
+      # 4317 is deliberately NOT published. Nothing on the host needs to push
+      # traces at this container: the producer is agentgateway, its sibling on
+      # the compose network, which reaches it at `jaeger:4317`. Publishing the
+      # port would only re-create the same clash on 4317.
+      - "127.0.0.1:${JAEGER_UI_PORT:-16686}:16686"
     environment:
+      # v1 does NOT open the OTLP receiver unless this is set. Without it the
+      # container starts, the UI answers, and every export fails with
+      # "connection refused" on 4317 — which reads as a broken client.
       COLLECTOR_OTLP_ENABLED: "true"
+    # No volume: all-in-one defaults to in-memory storage, so traces are lost
+    # on restart. That is the intent here — a demo should not accumulate a
+    # trace database on the host, and an empty UI after `up -d` is expected,
+    # not a symptom.
 
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: prometheus
-    volumes:
-      - ./otel/prometheus.yaml:/etc/prometheus/prometheus.yml:ro
-    ports:
-      - "127.0.0.1:9090:9090"
-
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    ports:
-      - "127.0.0.1:3000:3000"
-    environment:
-      GF_AUTH_ANONYMOUS_ENABLED: "true"
-      GF_AUTH_ANONYMOUS_ORG_ROLE: "Admin"
-      GF_SECURITY_ADMIN_PASSWORD: admin
-    volumes:
-      - ./otel/grafana-provisioning:/etc/grafana/provisioning:ro
+volumes:
+  postgres-data:
