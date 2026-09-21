@@ -13,7 +13,7 @@
 services:
   agentgateway:
     # Pinned rather than :latest so a config that validates today keeps working.
-    # config.yaml needs >= v1.5.0 (modelCatalog, provider presets).
+    # config/agentgateway.yaml needs >= v1.5.0 (modelCatalog, provider presets).
     image: ghcr.io/agentgateway/agentgateway:v1.5.0
     container_name: agentgateway
     restart: unless-stopped
@@ -34,9 +34,11 @@ services:
       OPENCODE_API_KEY: ${OPENCODE_API_KEY:-}
       # MCP: Tavily's remote server takes its key in the URL query.
       TAVILY_API_KEY: ${TAVILY_API_KEY:-}
-      OLLAMA_API_KEY_1: ${OLLAMA_API_KEY_1:-}
-      OLLAMA_API_KEY_2: ${OLLAMA_API_KEY_2:-}
-      OLLAMA_API_KEY_3: ${OLLAMA_API_KEY_3:-}
+      # The name config/agentgateway.yaml interpolates. Passing the legacy _1/_2/_3 names
+      # here would leave the container with no OLLAMA_API_KEY at all, and the
+      # gateway then sends an empty bearer token to ollama.com — a 401 that
+      # reads as "bad key" when the key was never handed over.
+      OLLAMA_API_KEY: ${OLLAMA_API_KEY:-}
       # localhost inside a container is the container, so reach the host's
       # Ollama explicitly. Linux needs the extra_hosts entry below.
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}
@@ -51,7 +53,7 @@ services:
       # wrong in a container: here Postgres is a sibling service.
       AGENTGATEWAY_DATABASE_URL: postgresql://agentgateway:agentgateway@postgres:5432/agentgateway
       AGENTGATEWAY_STORAGE_MODE: ${AGENTGATEWAY_STORAGE_MODE:-file}
-      # Required, and deliberately has no default. config.yaml uses the bare
+      # Required, and deliberately has no default. config/agentgateway.yaml uses the bare
       # ${AGENTGATEWAY_API_KEY} for llm.policies.apiKey, so an empty value would
       # register an empty key that strict mode then accepts. `:?` makes compose
       # refuse to start with a readable message instead of crash-looping the
@@ -71,7 +73,7 @@ services:
       #
       #   warn  failed to watch path /etc/agentgateway/base-costs.json: No path was found.
       #   error Failed to reload config: failed to read from file
-      #         `/etc/agentgateway/config.yaml`: No such file or directory (os error 2)
+      #         `/etc/agentgateway/config/agentgateway.yaml`: No such file or directory (os error 2)
       #   failed to write to file `./base-costs.json`: No such file or directory (os error 2)
       #
       # Replacing it by rename-over survives, so this fails intermittently
@@ -85,11 +87,11 @@ services:
       # and a restart is no longer the only way to pick up a host-side edit.
       #
       # Deliberately NOT :ro — with storage.mode=file the UI saves config
-      # changes by rewriting config.yaml, and POST /api/costs/refresh-base (the
+      # changes by rewriting config/agentgateway.yaml, and POST /api/costs/refresh-base (the
       # UI's "refresh costs" action) rewrites base-costs.json from models.dev
       # and hot-reloads it. A read-only mount makes both fail. The container
       # runs as uid 65532, so on Linux the files must be group/other writable
-      # (chmod 666 config.yaml base-costs.json) for a save to land; Docker
+      # (chmod 666 config/agentgateway.yaml base-costs.json) for a save to land; Docker
       # Desktop and OrbStack on macOS map the owner and need nothing.
       # Set AGENTGATEWAY_STORAGE_MODE=readOnly and append :ro to lock it down.
       - .:/etc/agentgateway
@@ -99,7 +101,7 @@ services:
       # single-file mount precisely because nothing ever replaces it.
       - /dev/null:/etc/agentgateway/.env:ro
     working_dir: /etc/agentgateway
-    command: ["-f", "/etc/agentgateway/config.yaml"]
+    command: ["-f", "/etc/agentgateway/config/agentgateway.yaml"]
     depends_on:
       postgres:
         condition: service_healthy
