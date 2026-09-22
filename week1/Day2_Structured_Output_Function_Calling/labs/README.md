@@ -85,21 +85,35 @@ go run . console        # агент із ДВОМА tool-джерелами: л
 go run . -no-mcp console  # лише локальний tool (те саме ДЗ без MCP)
 ```
 
-Перший рядок у stderr скаже `mcp: mono-go-mcp toolset attached`, і модель
-побачить і `get_exchange_rate`, і `mono_currency_rates` (плюс 3
+Перший рядок у stderr скаже `mcp: mono-go-mcp toolset attached (4 tools: ...)`,
+і модель побачить і `get_exchange_rate`, і `mono_currency_rates` (плюс 2
 `/personal/*` tool-и, яким потрібен `MONO_TOKEN`). Це і є живий
 «зовнішня tool boundary»: той самий курс валют — інший процес, інший
 протокол, та сама відповідальність валідувати. Кеш upstream (5 хв у
 mono-go-mcp) + кеш клієнта (1 хв у лабі) = реальні виклики API
 обмежуються лімітами обох шарів.
 
-| MCP tool | monobank ендпоінт | auth |
-|---|---|---|
-| `mono_currency_rates` | GET /bank/currency | публічний |
-| `mono_bank_sync` | GET /bank/sync | публічний |
-| `mono_client_info` | GET /personal/client-info | `MONO_TOKEN`, 1 запит/60 с |
-| `mono_statement` | GET /personal/statement/... | `MONO_TOKEN`, 1 запит/60 с |
-| `mono_set_webhook` | POST /personal/webhook | `MONO_TOKEN` |
+`mono_set_webhook` сервер виставляє, але агент його **навмисно не пропонує**
+(`withheldMCPTools` у `mcptool.go`): це POST на `/personal/webhook`, який
+змінює стан акаунта, а лаба його ніколи не потребує. Другий рядок у stderr
+називає цей список явно — least agency: модель не може зловжити tool-ом,
+якого їй не дали.
+
+**Чому MCP-інструменти розв'язуються заздалегідь.** ADK Web UI малює граф
+агента з `Reveal(agent).Tools` — і **лише** звідти; `.Toolsets` генератор не
+читає взагалі, а назви MCP-інструментів не існують, доки не виконано живий
+`tools/list`. Тому лаба розкриває toolset у статичний список на старті
+(`ResolveToolsets`), і граф показує всі 6 вузлів замість двох. Ціна названа
+прямо: `tools/list` тепер один раз на старті, тож tool, доданий у працюючий
+MCP-сервер, з'явиться лише після перезапуску процесу.
+
+| MCP tool | monobank ендпоінт | auth | агент пропонує |
+|---|---|---|---|
+| `mono_currency_rates` | GET /bank/currency | публічний | так |
+| `mono_bank_sync` | GET /bank/sync | публічний | так |
+| `mono_client_info` | GET /personal/client-info | `MONO_TOKEN`, 1 запит/60 с | так |
+| `mono_statement` | GET /personal/statement/... | `MONO_TOKEN`, 1 запит/60 с | так |
+| `mono_set_webhook` | POST /personal/webhook | `MONO_TOKEN` | **ні** |
 
 Бінарника немає — агент чесно скаже `mcp: mono-go-mcp not found
 (continuing with the local tool only)` й запуститься з одним локальним
@@ -162,21 +176,34 @@ JSON від моделі виявився бездоганно валідним:
 
 ### Вибір провайдера
 
-Перший збіг виграє, порядок задокументований навмисно (`agent.go`, `BuildModel`):
+Логіка **та сама, що в Дні 1** (`provider.go`, `LoadModel`) — щоб два дні не могли
+розійтися в тому, яка модель відповідає. Порядок розв'язання:
 
-| Змінна | Бекенд | Навіщо |
+1. `DEFAULT_MODEL_PROVIDER` називає провайдера; модель — з `MODEL`, інакше з
+   `<PROVIDER>_MODEL`, інакше дефолт цього провайдера.
+2. Сам лише `MODEL` називає модель **цілком**: префікс маршруту визначає
+   провайдера, а якщо префікса немає — відповідає `pimodels`.
+3. Нічого не задано — провайдер за наявним ключем, у порядку таблиці:
+   agentgateway → ollama → gemini → openai.
+
+Кожна відмова гучна й називає відомих провайдерів; мовчазного фолбека немає.
+
+| Змінна | Провайдер | Навіщо |
 |---|---|---|
-| `AGENTGATEWAY_BASE_URL` | `openaimodel` через локальний шлюз | Найвищий пріоритет: коли гейтвей піднято, **весь** трафік має йти крізь нього, інакше в трасах і в обліку вартості будуть дірки. |
-| `OLLAMA_BASE_URL` | `openaimodel` з власним `BaseURL` | Self-hosted. Апстрім-провайдера Ollama в ADK немає — це підтримуваний шлях. |
-| `GOOGLE_API_KEY` | `gemini` | Дефолт курсу. |
-| `OPENAI_API_KEY` | `openaimodel` | — |
+| `AGENTGATEWAY_BASE_URL` | `agentgateway/*` | Найвищий пріоритет: коли гейтвей піднято, **весь** трафік має йти крізь нього, інакше в трасах і в обліку вартості будуть дірки. |
+| `OLLAMA_BASE_URL` | `ollama` | Self-hosted. |
+| `GOOGLE_API_KEY` / `GEMINI_API_KEY` | `gemini` | Дефолт курсу. |
+| `OPENAI_API_KEY` | `openai` | — |
 
-> ⚠️ **`ANTHROPIC_API_KEY` сам по собі не запустить лабу.** ADK Go v2.4.0
-> постачає рівно три модельні пакети — `gemini`, `openaimodel`, `apigee`.
-> Бекенда Anthropic **немає** (звірено в module cache 27.08.2026). Це реальне
-> обмеження фреймворка, а не недогляд вправи — і код каже це прямо, замість
-> падати незрозумілим 401. Це ж чесна «ціна вибору» ADK Go з порівняльної
-> таблиці Дня 1.
+> ⚠️ **`ANTHROPIC_API_KEY` сам по собі не запустить лабу** — бо рядка Anthropic
+> немає в таблиці провайдерів, і лаба лишається на шляхах ADK Go v2.4.0 (його
+> модельні пакети — `gemini`, `openaimodel`, `apigee`; бекенда Anthropic немає).
+> Це та сама межа, що в Дні 1, тож обидва дні поводяться однаково.
+>
+> Чому це варто проговорити вголос: `pi-go`/`pimodels` Anthropic **уміє**. Тож
+> «Anthropic не працює» — це рішення *цієї* лаби (триматися ADK), а не
+> неможливість узагалі. Хочете його — маршрут `agentgateway/anthropic/...` або
+> `DEFAULT_MODEL_PROVIDER` з відповідним рядком у таблиці.
 
 ---
 
@@ -236,8 +263,10 @@ go test ./week1/...
 
 | Симптом | Причина | Що робити |
 |---|---|---|
-| `no model provider configured` | жодної зі змінних не видно | Почніть з `-offline`: він не потребує ключа взагалі. |
-| `ANTHROPIC_API_KEY is set, but ADK Go v2.4.0 ships no Anthropic backend` | ключ є, бекенда немає | Це не баг. Дайте `GOOGLE_API_KEY` або підніміть Ollama. |
+| `no model provider configured: жодного провайдера не налаштовано` | жодної зі змінних не видно | Почніть з `-offline`: він не потребує ключа взагалі. Далі — ключ у `apps/.env`. |
+| `невідомий провайдер "anthropic" у DEFAULT_MODEL_PROVIDER` | рядка Anthropic немає в таблиці (День 1 теж) | Це не баг і не «ADK не вміє». Візьміть `GOOGLE_API_KEY` чи `OPENAI_API_KEY`, підніміть Ollama або ходіть через `agentgateway/anthropic/...`. |
+| `не вдалося визначити провайдера для MODEL=...` | префікс невідомий і `pimodels` імені не знає | Допишіть маршрут (`MODEL=ollama/...`) або задайте `DEFAULT_MODEL_PROVIDER`. |
+| `Post "/responses": unsupported protocol scheme ""` | порожній `*_BASE_URL` у оточенні переміг дефолт SDK | Було виправлено в `internal/adkenv` (порожнє значення більше не експортується). Якщо повторюється — приберіть порожні `OPENAI_BASE_URL` зі свого оточення. |
 | Модель повертає JSON у ```-блоці | провайдер обгортає відповідь | Не «чистіть» регуляркою — це і є урок Блоку 2. Вмикайте structured output на рівні API. |
 | `invalid currency code: "долар" must be three letters (ISO 4217)` | не пройшла валідація форми | **Так і має бути.** JSON від моделі валідний, але значення поля — ні. |
 | `unknown currency code: XYZ` на бездоганному JSON | код валідний за формою, але його немає в довіднику | **Це і є `shape ≠ intent`**: форма правильна, а намір не підкріплений реальністю. Схема цього не ловить — ловить `rateToUAH`. |

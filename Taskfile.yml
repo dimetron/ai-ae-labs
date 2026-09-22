@@ -129,6 +129,25 @@ tasks:
     cmds:
       - go run {{.PKG}}
 
+  # Free the ADK Web UI port. `task week1:day1:web` and `week1:day2:web` both
+  # bind :8080, and a Ctrl-C'd `go run` leaves the child binary alive often
+  # enough that the next run dies with "address already in use". This is the
+  # escape hatch, so nobody has to remember the platform's incantation.
+  #
+  # `xargs kill`, not `kill`: this runs under Task's shell (gosh / mvdan-sh, not
+  # bash), where `kill` is an unsupported builtin that returns 2 and does
+  # nothing — so a plain `kill $pid` here reports success and changes nothing.
+  #
+  # darwin + linux only: detection is lsof, which Task refuses to run elsewhere
+  # rather than failing obscurely on a platform that has no equivalent.
+  #
+  # Override the port when something else holds 8080: task kill:8080 PORT=9000
+  kill:8080:
+    desc: 'Kill whatever is listening on :8080 (a leftover `go run ... web` server)'
+    platforms: [darwin, linux]
+    cmds:
+      - lsof -ti tcp:{{.PORT | default "8080"}} -sTCP:LISTEN | xargs kill 2>/dev/null || true
+
   # --- aggregate -----------------------------------------------------------
 
   check:
@@ -160,8 +179,11 @@ tasks:
 
   # Per-day entry points. Console is the interactive launcher (`console` reads
   # stdin and answers one request); web is the ADK Web UI on :8080 plus the REST
-  # API the UI calls. Day 1 needs a provider key for the model; Day 2 also runs
-  # key-free with `task week1:day2:console:offline`.
+  # API the UI calls. Both days need a provider key for the model.
+  #
+  # The two `:web` tasks both bind :8080, so they cannot run at once — and a
+  # Ctrl-C'd one often leaves its child alive, making the next run fail with
+  # "address already in use". `task kill:8080` is the remedy.
 
   week1:day1:console:
     desc: 'День 1: агент в інтерактивній консолі (потрібен ключ провайдера)'
@@ -177,11 +199,6 @@ tasks:
     desc: 'День 2: консоль з живими курсами НБУ (потрібен ключ провайдера)'
     cmds:
       - go run {{.DAY2}} console
-
-  week1:day2:console:offline:
-    desc: 'День 2: консоль на фікстурних курсах — без ключа й без мережі'
-    cmds:
-      - go run {{.DAY2}} -offline console
 
   week1:day2:console:monobank:
     desc: 'День 2: консоль з курсами monobank (-provider monobank)'
