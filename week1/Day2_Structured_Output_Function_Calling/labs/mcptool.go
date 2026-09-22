@@ -21,13 +21,16 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"google.golang.org/adk/v2/agent"
 	"google.golang.org/adk/v2/tool"
 	"google.golang.org/adk/v2/tool/mcptoolset"
 )
@@ -82,10 +85,101 @@ func MonoMCPToolset() (tool.Toolset, error) {
 	})
 }
 
+// withheldMCPTools names MCP tools the agent deliberately does NOT offer the
+// model, even though the server exposes them.
+//
+// mono_set_webhook POSTs to monobank's /personal/webhook and mutates account
+// state. The lab's rule is least agency: a tool the exercise never needs is a
+// tool the model cannot misuse. Keeping the list here — rather than filtering
+// silently inside MonoMCPToolset — keeps the raw boundary honest, so the e2e
+// test can still prove the server exposes all five tools while the agent's
+// narrower surface stays an explicit, reviewable decision.
+var withheldMCPTools = []string{"mono_set_webhook"}
+
+// WithholdTools returns tools without the named ones, preserving order.
+func WithholdTools(tools []tool.Tool, withheld []string) []tool.Tool {
+	if len(withheld) == 0 {
+		return tools
+	}
+	drop := make(map[string]bool, len(withheld))
+	for _, name := range withheld {
+		drop[name] = true
+	}
+	kept := make([]tool.Tool, 0, len(tools))
+	for _, t := range tools {
+		if drop[t.Name()] {
+			continue
+		}
+		kept = append(kept, t)
+	}
+	return kept
+}
+
+// AgentMCPTools resolves the mono-go-mcp toolset into exactly the tools the
+// agent offers the model: everything the server exposes, minus
+// withheldMCPTools. It is the single place the lab decides its MCP surface.
+func AgentMCPTools(ctx context.Context) ([]tool.Tool, error) {
+	ts, err := MonoMCPToolset()
+	if err != nil {
+		return nil, err
+	}
+	all, err := ResolveToolsets(ctx, ts)
+	if err != nil {
+		return nil, err
+	}
+	return WithholdTools(all, withheldMCPTools), nil
+}
+
 // HasMonoMCP is a cheap check for the agent wiring: should the external MCP
 // toolset be attached? true when the binary is resolvable. Errors are
 // reported by MonoMCPToolset itself; this only decides.
 func HasMonoMCP() bool {
 	_, err := monoMCPBin()
 	return err == nil
+}
+
+// resolveTimeout bounds the eager tools/list call. A local stdio server
+// answers in milliseconds; the bound exists so a wedged server cannot hang
+// startup, which is what the learner would otherwise stare at.
+const resolveTimeout = 20 * time.Second
+
+// resolveContext is the minimum an ADK ReadonlyContext must provide for a
+// toolset's Tools() method: every MCP toolset only reads the embedded
+// context.Context. StrictContextMock supplies the whole interface, so an
+// unexpected call panics loudly instead of returning a zero value.
+type resolveContext struct {
+	agent.StrictContextMock
+}
+
+// ResolveToolsets expands toolsets into a static tool list at startup.
+//
+// Why this exists: the ADK web UI draws its agent graph from
+// llmagentinternal.Reveal(agent).Tools — and only .Tools. The generator never
+// reads .Toolsets, so a tool that arrives through a toolset is invisible in
+// the graph (see the Week 1 Part 2 lab README). MCPServer tools also have no
+// static existence: names like mono_currency_rates come from a live
+// tools/list call, so there is nothing to draw until that call happens.
+//
+// Resolving here makes the graph and the model agree, at a cost worth naming:
+// tools/list now runs once at startup instead of per invocation, so a tool
+// added to a running MCP server no longer appears until this process
+// restarts. For a stdio server started by this same process that is not a
+// real loss. Each returned tool keeps its own mcpTool, which holds the
+// toolset's shared connection refresher, so call-time reconnection behaviour
+// is unchanged.
+func ResolveToolsets(ctx context.Context, toolsets ...tool.Toolset) ([]tool.Tool, error) {
+	var out []tool.Tool
+	for _, ts := range toolsets {
+		if ts == nil {
+			continue
+		}
+		callCtx, cancel := context.WithTimeout(ctx, resolveTimeout)
+		resolved, err := ts.Tools(&resolveContext{StrictContextMock: agent.NewStrictContextMock(callCtx)})
+		cancel()
+		if err != nil {
+			return nil, fmt.Errorf("resolve toolset %q: %w", ts.Name(), err)
+		}
+		out = append(out, resolved...)
+	}
+	return out, nil
 }
