@@ -1,5 +1,28 @@
 # yaml-language-server: $schema=https://agentgateway.dev/schema/config
 config:
+  # Траси до Jaeger. Без цього блоку шлюз не надсилає нічого: контейнер jaeger
+  # піднятий, UI на :16686 відповідає, але список сервісів порожній — що
+  # виглядає як зламаний експортер, а не як вимкнений.
+  #
+  # `randomSampling: true` обов'язковий, а не косметичний. Типове значення
+  # семплінгу — «не брати нічого»: перевірено живцем, 5 запитів без цього поля
+  # дали 0 нових трас, ті самі 5 з ним — 5 трас.
+  tracing:
+    # Сусід по compose-мережі, а не localhost: шлюз у контейнері, і
+    # `localhost:4317` указував би на нього самого.
+    #
+    # Змінна НАВМИСНО не зветься OTEL_EXPORTER_OTLP_ENDPOINT, хоч шлюз її і
+    # розуміє. Це загальновідоме ім'я, яке ставлять інші інструменти: якщо в
+    # оточенні вже є `OTEL_EXPORTER_OTLP_ENDPOINT=127.0.0.1:4317` (а воно
+    # трапляється — так робить pi-go), `${VAR:-default}` підхопить саме його,
+    # і трасування мовчки зламається: без схеми `http://` парсер падає з
+    # `first path segment in URL cannot contain colon`, а `127.0.0.1` у
+    # контейнері — це сам шлюз. Окреме ім'я прибирає цю пастку.
+    otlpEndpoint: ${AGENTGATEWAY_OTLP_ENDPOINT:-http://jaeger:4317}
+    # Jaeger all-in-one приймає OTLP саме по gRPC на 4317. 4318 — HTTP-приймач,
+    # і з ним цей самий endpoint мовчки не працює.
+    otlpProtocol: grpc
+    randomSampling: true
   logging:
     fields:
       add:
