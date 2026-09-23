@@ -3,7 +3,7 @@ module github.com/dimetron/ai-eng-course/labs
 go 1.27.1
 
 require (
-	github.com/dimetron/pi-go v0.2.0
+	github.com/dimetron/pi-go v0.2.1
 	github.com/google/jsonschema-go v0.4.3
 	github.com/gorilla/mux v1.8.1
 	github.com/modelcontextprotocol/go-sdk v1.8.0
