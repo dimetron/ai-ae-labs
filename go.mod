@@ -3,8 +3,9 @@ module github.com/dimetron/ai-eng-course/labs
 go 1.27.1
 
 require (
-	github.com/dimetron/pi-go v0.1.7
+	github.com/dimetron/pi-go v0.2.0
 	github.com/google/jsonschema-go v0.4.3
+	github.com/gorilla/mux v1.8.1
 	github.com/modelcontextprotocol/go-sdk v1.8.0
 	google.golang.org/adk/v2 v2.4.0
 	google.golang.org/genai v1.71.0
@@ -33,7 +34,6 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.21 // indirect
 	github.com/googleapis/gax-go/v2 v2.24.0 // indirect
-	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.30.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect

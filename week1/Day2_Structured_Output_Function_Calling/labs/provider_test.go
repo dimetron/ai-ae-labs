@@ -281,7 +281,7 @@ func TestChooseModelPrecedence(t *testing.T) {
 // TestAgentGatewayRoutesResolveThroughPimodels pins that every table row is a
 // name pimodels itself recognises, and pins HOW it resolves it.
 //
-// The contract, verified against pi-go v0.1.4: an `agentgateway/...` name
+// The contract, verified against pi-go v0.2.0: an `agentgateway/...` name
 // resolves to provider "agentgateway" with the rest of the name — including any
 // vendor segment — left intact as the model. The gateway does the routing; the
 // client must forward the layered name rather than strip it. Getting this wrong
