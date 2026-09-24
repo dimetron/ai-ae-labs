@@ -89,7 +89,7 @@ adk-quickstart/             ADK Go v2 агент, який студенти за
 Taskfile.yml                команди репозиторію (task check, task test, task cover)
 AGENTS.md                   конвенції репозиторію для агентів і розробників
 .devcontainer/              dev container: Go + Docker + kind (див. §6)
-.agents/skills/             скіли для AI-агентів: go-senior-developer, asd-ste100 (§7)
+.agents/skills/             скіли для AI-агентів: go-senior-developer, asd-ste100, go-test-summary (§8)
 ```
 
 ---
@@ -190,6 +190,7 @@ devcontainer exec --workspace-folder . bash
 |---|---|
 | `go-senior-developer` | пишете або рецензуєте Go: ідіоми, TDD, архітектура, безпека |
 | `asd-ste100` | пишете тексти інструкцій: короткі однозначні речення (Simplified Technical English) |
+| `go-test-summary` | звітуєте про результат `go test`: таблиця з рядком на пакет + підсумок PASS/FAIL/SKIP |
 
 Кожен скіл — тека зі `SKILL.md` (коли застосовувати + стислий огляд) і
 `references/`, `examples/` із докладними матеріалами. Посилання всередині
@@ -201,6 +202,9 @@ devcontainer exec --workspace-folder . bash
   для кожної горутини та заборона пакетів `util`/`common`/`helpers`.
 - `asd-ste100` допомагає з формулюваннями в README, Homework і описах
   інструментів — там, де важлива однозначність.
+- `go-test-summary` задає форму звіту після кожного прогону `go test`: ASCII-таблиця
+  з рядком на пакет, статусом і тривалістю, плюс підсумкові рядки PASS/FAIL/SKIP.
+  Також містить команди, якими рахуються ці числа.
 
 Скіли читають агенти (Claude Code, Codex, Gemini CLI тощо), які підтримують
 конвенцію `.agents/`; для людини це просто корисні довідники.
