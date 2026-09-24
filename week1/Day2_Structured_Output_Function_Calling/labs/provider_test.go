@@ -177,7 +177,9 @@ func TestChooseModelPrecedence(t *testing.T) {
 			name:         "explicit agentgateway route wins",
 			env:          map[string]string{"DEFAULT_MODEL_PROVIDER": "agentgateway/gemini"},
 			wantProvider: "agentgateway/gemini",
-			wantModel:    "gemini-3.8-flash",
+			// Ім'я мусить вийти кваліфікованим: голе воно резолвиться в
+			// прямий Gemini-клієнт до Google, тихо обминаючи шлюз.
+			wantModel: "agentgateway/gemini/gemini-3.8-flash",
 		},
 		{
 			name:         "MODEL alone infers the provider from its prefix",
@@ -207,7 +209,7 @@ func TestChooseModelPrecedence(t *testing.T) {
 			name:         "an agentgateway base URL turns the gateway on by itself",
 			env:          map[string]string{"AGENTGATEWAY_BASE_URL": "http://localhost:4000"},
 			wantProvider: "agentgateway/ollama",
-			wantModel:    "qwen3.5:4b-mlx",
+			wantModel:    "agentgateway/ollama/qwen3.5:4b-mlx",
 		},
 		{
 			name:         "a Gemini key turns on the gemini provider",
@@ -278,10 +280,64 @@ func TestChooseModelPrecedence(t *testing.T) {
 	}
 }
 
+// TestQualifyGatewayModel pins the routing rule the grounding debug case
+// exposed: pimodels chooses "gateway or vendor" by the NAME PREFIX alone, so a
+// bare model name under an agentgateway provider must come out qualified —
+// otherwise the request silently bypasses the gateway and goes to the vendor.
+func TestQualifyGatewayModel(t *testing.T) {
+	tests := []struct {
+		name     string
+		provider string
+		model    string
+		want     string
+	}{
+		{
+			name:     "bare model gets the full gateway route",
+			provider: "agentgateway/gemini",
+			model:    "gemini-3.8-flash",
+			want:     "agentgateway/gemini/gemini-3.8-flash",
+		},
+		{
+			name:     "vendor-prefixed model only gets the gateway segment",
+			provider: "agentgateway/gemini",
+			model:    "gemini/gemini-3.8-flash",
+			want:     "agentgateway/gemini/gemini-3.8-flash",
+		},
+		{
+			name:     "already-qualified name is untouched",
+			provider: "agentgateway/gemini",
+			model:    "agentgateway/gemini/gemini-3.8-flash",
+			want:     "agentgateway/gemini/gemini-3.8-flash",
+		},
+		{
+			name:     "bare ollama tag gets the gateway route too",
+			provider: "agentgateway/ollama",
+			model:    "qwen3.5:4b-mlx",
+			want:     "agentgateway/ollama/qwen3.5:4b-mlx",
+		},
+		{
+			name:     "non-gateway provider is untouched",
+			provider: "gemini",
+			model:    "gemini-3.8-flash",
+			want:     "gemini-3.8-flash",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			if got := qualifyGatewayModel(tt.provider, tt.model); got != tt.want {
+				t.Errorf("qualifyGatewayModel(%q, %q) = %q, want %q",
+					tt.provider, tt.model, got, tt.want)
+			}
+		})
+	}
+}
+
 // TestAgentGatewayRoutesResolveThroughPimodels pins that every table row is a
 // name pimodels itself recognises, and pins HOW it resolves it.
 //
-// The contract, verified against pi-go v0.2.1: an `agentgateway/...` name
+// The contract, verified against pi-go v0.2.3: an `agentgateway/...` name
 // resolves to provider "agentgateway" with the rest of the name — including any
 // vendor segment — left intact as the model. The gateway does the routing; the
 // client must forward the layered name rather than strip it. Getting this wrong
@@ -467,6 +523,29 @@ func TestLoadModel(t *testing.T) {
 		}
 		if choice.Reason == "" {
 			t.Error("choice.Reason is empty; it is what tells a learner which backend answered")
+		}
+	})
+
+	// The regression this pins: a gateway provider must build a GATEWAY-routed
+	// model. Before qualifyGatewayModel, the bare default name resolved to a
+	// direct vendor client and the gateway never saw the request — grounding
+	// through the gateway "did not work" because the gateway was not on the
+	// wire at all. The base URL must also come from AGENTGATEWAY_BASE_URL:
+	// pimodels does not read that variable as an endpoint by itself.
+	t.Run("an agentgateway provider builds a gateway-routed model", func(t *testing.T) {
+		clearCredentials(t)
+		t.Setenv("DEFAULT_MODEL_PROVIDER", "agentgateway/gemini")
+		t.Setenv("AGENTGATEWAY_BASE_URL", "http://localhost:4000")
+
+		m, choice, err := LoadModel(context.Background())
+		if err != nil {
+			t.Fatalf("LoadModel() error: %v", err)
+		}
+		if m == nil {
+			t.Fatal("LoadModel() returned a nil model")
+		}
+		if want := "agentgateway/gemini/gemini-3.8-flash"; choice.Model != want {
+			t.Errorf("choice.Model = %q, want %q (a bare name bypasses the gateway)", choice.Model, want)
 		}
 	})
 

@@ -22,7 +22,7 @@
 // bootstrap оточення застосунку, а не властивість провайдера. Викликайте його
 // ДО LoadModel, інакше ключі з файлу ще не будуть в оточенні.
 //
-// Перевірено проти google.golang.org/adk/v2 v2.4.0 і pi-go v0.2.1 (станом на 09/2026).
+// Перевірено проти google.golang.org/adk/v2 v2.4.0 і pi-go v0.2.3 (станом на 09/2026).
 package main
 
 import (
@@ -319,12 +319,44 @@ func choiceFor(d providerDefault, modelEnv string) modelChoice {
 			model = v
 		}
 	}
-	model = resolveModelName(model, d.Model)
+	model = qualifyGatewayModel(d.Provider, resolveModelName(model, d.Model))
 	return modelChoice{
 		Provider: d.Provider,
 		Model:    model,
 		Reason:   fmt.Sprintf("%s → %s", d.Provider, model),
 	}
+}
+
+// qualifyGatewayModel добудовує маршрут шлюзу в ім'я моделі, коли провайдер —
+// agentgateway, а ім'я — голе.
+//
+// Це не косметика, а сама маршрутизація: pimodels вирішує «шлюз чи вендор»
+// ВИКЛЮЧНО за префіксом імені. Голе `gemini-3.8-flash` при провайдері
+// `agentgateway/gemini` раніше йшло в pimodels як є — і резолвилося в прямий
+// Gemini-клієнт до Google, тихо обминаючи шлюз. Назовні це виглядало як
+// «через шлюз grounding не працює», хоча запит шлюзу навіть не торкався;
+// траси й облік вартості при цьому теж діряві (той самий інваріант, що в
+// коментарі до providerDefaults: піднятий шлюз має бачити весь трафік).
+//
+// Правила добудови — від найточнішого збігу до повного:
+//
+//   - ім'я вже несе `agentgateway/` — не чіпаємо (MODEL задано цілком);
+//   - ім'я вже несе вендорський сегмент маршруту (`gemini/...`) — досить
+//     докласти `agentgateway/`, інакше вийшов би подвоєний сегмент;
+//   - голе ім'я — докладаємо весь маршрут (`agentgateway/gemini/`).
+func qualifyGatewayModel(provider, model string) string {
+	if !isAgentGateway(provider) {
+		return model
+	}
+	lower := strings.ToLower(model)
+	if strings.HasPrefix(lower, "agentgateway/") {
+		return model
+	}
+	if vendor, ok := strings.CutPrefix(strings.ToLower(provider), "agentgateway/"); ok &&
+		strings.HasPrefix(lower, vendor+"/") {
+		return "agentgateway/" + model
+	}
+	return provider + "/" + model
 }
 
 // knownProviders збирає перелік провайдерів для повідомлення про помилку.
@@ -343,9 +375,10 @@ func knownProviders() string {
 // Два випадки, які треба розрізняти:
 //
 //   - `agentgateway/<vendor>/<model>` — це маршрут шлюзу, а не вендорський API.
-//     pimodels знає про agentgateway і сам підставить його base URL (за
-//     замовчуванням http://localhost:4000), тому WithBaseURL тут НЕ передається:
-//     вона перебила б рішення pimodels і зламала б маршрутизацію всередині шлюзу.
+//     Endpoint тут — сам шлюз: AGENTGATEWAY_BASE_URL, якщо задано, інакше
+//     дефолт pimodels (http://localhost:4000). OLLAMA_BASE_URL сюди НЕ
+//     передається: це адреса іншого сервіса, і вона перебила б адресу шлюзу
+//     та зламала б маршрутизацію всередині нього.
 //   - будь-яка інша модель плюс OLLAMA_BASE_URL — це вказівка на конкретний
 //     endpoint, і вона передається явно.
 //
@@ -358,10 +391,16 @@ func knownProviders() string {
 // Resolve повертає рівно те, для чого ретрай писався.
 func createModel(ctx context.Context, provider, modelName string) (model.LLM, error) {
 	var opts []pimodels.Option
-	if !isAgentGateway(provider) {
-		if base := os.Getenv("OLLAMA_BASE_URL"); base != "" {
+	if isAgentGateway(provider) {
+		// Адресу шлюзу треба передати явно: pimodels цю змінну як endpoint не
+		// читає, а без неї шлюз на нестандартному порту тихо ігнорувався б —
+		// клієнт стукав би в дефолтний :4000. Читання через adkenv.Key, щоб
+		// порожня-але-виставлена змінна не затерла дефолт pimodels.
+		if base, ok := adkenv.Key("AGENTGATEWAY_BASE_URL"); ok {
 			opts = append(opts, pimodels.WithBaseURL(base))
 		}
+	} else if base := os.Getenv("OLLAMA_BASE_URL"); base != "" {
+		opts = append(opts, pimodels.WithBaseURL(base))
 	}
 	m, err := pimodels.New(ctx, modelName, opts...)
 	if err != nil {
