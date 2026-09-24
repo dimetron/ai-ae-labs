@@ -170,6 +170,19 @@ tasks:
     cmds:
       - go test -race ./week1/...
 
+  # Day-scoped test runs. `{{.DAYn}}/...` and not `{{.DAYn}}`: the trailing /...
+  # is what pulls in the day's subpackages (day 1's solution/, day 2's cmd/mcp),
+  # so a day entry point covers the same set as running go test by hand.
+  week1:day1:test:
+    desc: 'День 1: тести лаби і solution/ з -race (без ключів і без мережі)'
+    cmds:
+      - go test -race -count=1 {{.DAY1}}/...
+
+  week1:day2:test:
+    desc: 'День 2: тести лаби і cmd/mcp з -race (без ключів і без мережі)'
+    cmds:
+      - go test -race -count=1 {{.DAY2}}/...
+
   week1:run:
     desc: 'Run a week1 lab: task week1:run PKG=./week1/Day1_Models_and_Frameworks_Landscape/labs'
     requires:
