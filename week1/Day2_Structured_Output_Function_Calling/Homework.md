@@ -14,7 +14,7 @@
 
 Перш ніж писати власний контракт — подивіться, як межа системи ловить зіпсований виклик і **каже вголос, що саме з ним не так**. Ключ і мережа не потрібні.
 
-Спершу переконайтесь, що базовий тест зелений (врізка «Перші 15 хвилин» вище). Далі покладіть у папку лаби файл `earlywin_test.go` — це навмисно зіпсована «відповідь моделі», яку ви пропускаєте через ту саму валідацію, що й справжній tool-call:
+Спершу переконайтесь, що базовий тест зелений (врізка «Перші 15 хвилин» вище). Далі відкрийте файл `earlywin_test.go` у папці лаби — він уже там, і містить навмисно зіпсовану «відповідь моделі», яку ви пропускаєте через ту саму валідацію, що й справжній tool-call:
 
 ```go
 package main
@@ -47,7 +47,6 @@ func TestEarlyWin(t *testing.T) {
 Запустіть:
 
 ```bash
-cd courses/AI_Agents_Engineering/lectures/week1/Day2_Structured_Output_Function_Calling/labs
 go test -run TestEarlyWin -v .
 ```
 
@@ -63,7 +62,7 @@ go test -run TestEarlyWin -v .
 
 ## Основне завдання
 
-**Ваше завдання —** розширити стартовий шаблон [courses/AI_Agents_Engineering/lectures/week1/Day2_Structured_Output_Function_Calling/labs/main.go](https://github.com/dimetron/ai-ae-labs/blob/main/week1/Day2_Structured_Output_Function_Calling/labs/main.go) до `Strict Schema Enforcer`:
+**Ваше завдання —** розширити стартовий шаблон [week1/Day2_Structured_Output_Function_Calling/labs/main.go](https://github.com/dimetron/ai-ae-labs/blob/main/week1/Day2_Structured_Output_Function_Calling/labs/main.go) до `Strict Schema Enforcer`:
 
 1. Реалізуйте типізований інструмент курсу валют через `functiontool.New`: вхід `RateInput{Base, Target}`, вихід `RateOutput{Rate, AsOf}` — з `json`-тегами та **описами** полів у `jsonschema`-тегах. У pinned лабі тег не задає `required`/enum: такі обмеження робіть явною `InputSchema` або доменною валідацією. Джерело даних — публічний API або чесний мок: **НБУ** (`https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?json`, офіційні курси) або **monobank** (`https://api.monobank.ua/bank/currency`, купівля/продаж банку; у стартовій лабі вже є `MonoProvider` — обидва без ключа, обидва з опублікованими лімітами).
 2. Додайте валідацію входу всередині інструмента: невідомий код валюти → зрозуміла помилка (`fmt.Errorf`), яку модель бачить і виправляє свій виклик.
@@ -104,7 +103,7 @@ go test -run TestEarlyWin -v .
 
 | Симптом | Що перевірити |
 |---|---|
-| `go test ./...` червоний одразу після клонування | Ви не в папці лаби: `cd courses/AI_Agents_Engineering/lectures/week1/Day2_Structured_Output_Function_Calling/labs` і повторіть. Для тестів **не потрібні** API-ключ і мережа. |
+| `go test ./...` червоний одразу після клонування | Ви не в папці лаби: `cd week1/Day2_Structured_Output_Function_Calling/labs` і повторіть. Для тестів **не потрібні** API-ключ і мережа. |
 | Агент відповідає текстом, але не викликає інструмент | Перечитайте `Description` інструмента: модель вирішує «викликати чи ні» саме за описом (див. Лекцію, «Контракт функції»). Опис має казати, *коли* викликати і коли перепитати. |
 | «Помилка: невідомий код валюти» | Це не поломка, а робочий fail path: інструмент навмисно повертає зрозумілу помилку замість вигаданого курсу. Задокументуйте цей діалог — він потрібен у README. |
 | Немає ключа або мережі для живого API (НБУ чи monobank) | Запускайте з фікстурою: `go run . -offline console` — цього достатньо для всього core path. |
