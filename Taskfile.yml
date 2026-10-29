@@ -919,6 +919,18 @@ tasks:
     cmds:
       - go run {{.DAY11}}
 
+  # Web UI шаблону Дня 11. Цикл ігнорує текст у чаті: завдання задає LAB_TASK
+  # (prorate_refund | parse_amount | validate_iban), надішліть будь-яке
+  # повідомлення, щоб запустити прогін. Приклади — у labs11/PROMPTS.md.
+  # Порт :8080 спільний з іншими `web`-задачами: `task kill:8080`.
+  week6:day11:live-web:
+    desc: 'День 11: шаблон лаби у Web UI на http://localhost:8080/ui/ (LAB_TASK=validate_iban)'
+    dir: '{{.DAY11}}'
+    vars:
+      LAB_TASK: '{{.LAB_TASK | default "validate_iban"}}'
+    cmds:
+      - go run . -task {{.LAB_TASK}} web webui api
+
   week6:day11:test:
     desc: 'День 11: тести лаби й еталона (PKG звужує, напр. PKG=./internal/gate)'
     dir: '{{.DAY11}}'
